@@ -1,0 +1,642 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VE Design System — 설계 전략</title>
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --surface: #ffffff;
+      --text: #0f172a;
+      --muted: #64748b;
+      --border: #e2e8f0;
+      --primary: #2563eb;
+      --primary-soft: #dbeafe;
+      --accent: #0f766e;
+      --accent-soft: #ccfbf1;
+      --code-bg: #1e293b;
+      --code-text: #e2e8f0;
+      --radius: 12px;
+      --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 8px 24px rgba(15, 23, 42, 0.06);
+      --font: "Inter", "Pretendard", system-ui, -apple-system, sans-serif;
+      --mono: "JetBrains Mono", "D2Coding", ui-monospace, monospace;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1e3a8a 0%, #2563eb 55%, #0f766e 100%);
+      color: #fff;
+      padding: 3rem 1.5rem 2.5rem;
+    }
+
+    header .wrap { max-width: 960px; margin: 0 auto; }
+
+    header h1 {
+      margin: 0 0 0.5rem;
+      font-size: clamp(1.75rem, 4vw, 2.5rem);
+      letter-spacing: -0.02em;
+    }
+
+    header p {
+      margin: 0;
+      max-width: 52rem;
+      opacity: 0.92;
+      font-size: 1.05rem;
+    }
+
+    .meta {
+      margin-top: 1.25rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 0.25rem 0.65rem;
+      border-radius: 999px;
+      font-size: 0.8rem;
+      background: rgba(255, 255, 255, 0.16);
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    nav.toc {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.25rem 1.5rem;
+      margin-bottom: 2rem;
+    }
+
+    nav.toc h2 {
+      margin: 0 0 0.75rem;
+      font-size: 1rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    nav.toc ol {
+      margin: 0;
+      padding-left: 1.25rem;
+      columns: 2;
+      column-gap: 2rem;
+    }
+
+    @media (max-width: 640px) {
+      nav.toc ol { columns: 1; }
+    }
+
+    nav.toc a {
+      color: var(--primary);
+      text-decoration: none;
+    }
+
+    nav.toc a:hover { text-decoration: underline; }
+
+    section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 1.75rem;
+      margin-bottom: 1.5rem;
+    }
+
+    section h2 {
+      margin: 0 0 1rem;
+      font-size: 1.35rem;
+      letter-spacing: -0.01em;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary-soft);
+    }
+
+    section h3 {
+      margin: 1.5rem 0 0.75rem;
+      font-size: 1.05rem;
+      color: var(--accent);
+    }
+
+    p { margin: 0 0 1rem; }
+
+    ul, ol { margin: 0 0 1rem; padding-left: 1.25rem; }
+
+    li { margin-bottom: 0.35rem; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.92rem;
+      margin: 1rem 0;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 0.65rem 0.75rem;
+      text-align: left;
+      vertical-align: top;
+    }
+
+    th {
+      background: #f1f5f9;
+      font-weight: 600;
+    }
+
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      border-radius: 8px;
+      padding: 1rem 1.1rem;
+      overflow-x: auto;
+      font-family: var(--mono);
+      font-size: 0.82rem;
+      line-height: 1.55;
+      margin: 1rem 0;
+    }
+
+    code {
+      font-family: var(--mono);
+      font-size: 0.88em;
+      background: #f1f5f9;
+      padding: 0.1em 0.35em;
+      border-radius: 4px;
+    }
+
+    pre code {
+      background: none;
+      padding: 0;
+    }
+
+    .principles {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 1rem;
+      margin-top: 1rem;
+    }
+
+    .card {
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 1rem;
+      background: #fafbfc;
+    }
+
+    .card strong {
+      display: block;
+      margin-bottom: 0.35rem;
+      color: var(--primary);
+    }
+
+    .diagram {
+      background: #f8fafc;
+      border: 1px dashed var(--border);
+      border-radius: 8px;
+      padding: 1rem;
+      font-family: var(--mono);
+      font-size: 0.8rem;
+      white-space: pre;
+      overflow-x: auto;
+      line-height: 1.5;
+    }
+
+    .callout {
+      border-left: 4px solid var(--primary);
+      background: var(--primary-soft);
+      padding: 0.85rem 1rem;
+      border-radius: 0 8px 8px 0;
+      margin: 1rem 0;
+    }
+
+    .callout.accent {
+      border-left-color: var(--accent);
+      background: var(--accent-soft);
+    }
+
+    footer {
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.85rem;
+      padding: 2rem 1rem;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <h1>VE Design System — 설계 전략</h1>
+      <p>
+        vanilla-extract 기반 zero-runtime CSS, pnpm 모노레포, recipe 패턴을 중심으로
+        토큰·컴포넌트·소비 앱의 책임을 분리하는 디자인 시스템 아키텍처 문서입니다.
+      </p>
+      <div class="meta">
+        <span class="badge">vanilla-extract</span>
+        <span class="badge">pnpm workspace</span>
+        <span class="badge">React 19 + JSX</span>
+        <span class="badge">Storybook 계약</span>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <nav class="toc" aria-label="목차">
+      <h2>목차</h2>
+      <ol>
+        <li><a href="#goals">설계 목표</a></li>
+        <li><a href="#principles">핵심 원칙</a></li>
+        <li><a href="#layers">레이어 아키텍처</a></li>
+        <li><a href="#tokens">토큰 전략</a></li>
+        <li><a href="#components">컴포넌트 전략</a></li>
+        <li><a href="#styling">스타일링 패턴</a></li>
+        <li><a href="#build">빌드·해석 전략</a></li>
+        <li><a href="#consumption">소비 앱 연동</a></li>
+        <li><a href="#quality">품질·계약</a></li>
+        <li><a href="#roadmap">로드맵</a></li>
+        <li><a href="#migration">전환 시나리오 요약</a></li>
+      </ol>
+    </nav>
+
+    <section id="goals">
+      <h2>1. 설계 목표</h2>
+      <p>
+        본 프로젝트는 <strong>대규모 React + Vite + JavaScript + CSS Modules</strong> 코드베이스를
+        점진적으로 이전할 수 있는 디자인 시스템 골격을 제공합니다. 다음을 동시에 달성하는 것이 목표입니다.
+      </p>
+      <ul>
+        <li><strong>일관성</strong> — 색·간격·타이포·radius를 <code>@ve/tokens</code> 한 곳에서 정의</li>
+        <li><strong>타입 안전성</strong> — recipe variant를 TypeScript로 추론 (<code>RecipeVariants</code>)</li>
+        <li><strong>런타임 최소화</strong> — vanilla-extract로 빌드 타임 정적 CSS 추출</li>
+        <li><strong>점진적 도입</strong> — JS 컴포넌트(<code>.jsx</code>)와 TS 스타일(<code>.css.ts</code>) 공존</li>
+        <li><strong>시각 계약</strong> — Storybook을 컴포넌트 동작·외형의 단일 진실 공급원으로 사용</li>
+      </ul>
+    </section>
+
+    <section id="principles">
+      <h2>2. 핵심 원칙</h2>
+      <div class="principles">
+        <div class="card">
+          <strong>Tokens first</strong>
+          색상, spacing, radius, typography는 반드시 <code>@ve/tokens</code>에서 시작한다.
+        </div>
+        <div class="card">
+          <strong>Intent over implementation</strong>
+          컴포넌트 API는 <code>variant</code>(의미), <code>size</code>(밀도)로 의도를 표현한다.
+        </div>
+        <div class="card">
+          <strong>Single source in apps</strong>
+          제품 앱은 임의 스타일 대신 <code>@ve/ui</code>를 소비한다.
+        </div>
+        <div class="card">
+          <strong>Static CSS only</strong>
+          런타임 CSS-in-JS를 사용하지 않고 vanilla-extract 정적 추출만 허용한다.
+        </div>
+      </div>
+    </section>
+
+    <section id="layers">
+      <h2>3. 레이어 아키텍처</h2>
+      <p>패키지 간 의존 방향은 단방향이며, 상위 레이어가 하위 레이어에만 의존합니다.</p>
+      <div class="diagram">┌─────────────────────────────────────────────┐
+│  apps/storybook, apps/web (소비 앱)           │
+│  — 시각 검증, 라우팅, 비즈니스 UI 조합         │
+└────────────────────┬────────────────────────┘
+                     │ import
+┌────────────────────▼────────────────────────┐
+│  @ve/ui (packages/ui)                        │
+│  — React primitive, recipe, 컴포넌트 API     │
+└────────────────────┬────────────────────────┘
+                     │ import vars
+┌────────────────────▼────────────────────────┐
+│  @ve/tokens (packages/tokens)                │
+│  — createGlobalTheme, 디자인 토큰, 글로벌 CSS  │
+└─────────────────────────────────────────────┘</div>
+
+      <table>
+        <thead>
+          <tr>
+            <th>레이어</th>
+            <th>책임</th>
+            <th>비책임 (하지 않을 것)</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>@ve/tokens</code></td>
+            <td>테마 변수, 글로벌 <code>:root</code> CSS 생성</td>
+            <td>React 컴포넌트, variant 로직</td>
+          </tr>
+          <tr>
+            <td><code>@ve/ui</code></td>
+            <td>재사용 primitive, recipe, export API</td>
+            <td>페이지 레이아웃, 도메인 비즈니스 로직</td>
+          </tr>
+          <tr>
+            <td>소비 앱</td>
+            <td>조합, 라우팅, 데이터 페칭</td>
+            <td>디자인 토큰 하드코딩, 중복 primitive 정의</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="tokens">
+      <h2>4. 토큰 전략</h2>
+      <p>
+        <code>packages/tokens/src/theme.css.ts</code>에서 <code>createGlobalTheme</code>로
+        CSS 변수를 생성하고, <code>vars</code> 객체를 통해 TypeScript에서 타입 안전하게 참조합니다.
+      </p>
+      <pre><code>export const vars = createGlobalTheme(":root", {
+  color: { background, foreground, primary, primaryForeground, border },
+  space: { x1, x2, x3, x4 },   // 4px 그리드
+  radius: { sm, md },
+  font: { body }
+});</code></pre>
+
+      <h3>토큰 네이밍 규칙</h3>
+      <ul>
+        <li><strong>semantic color</strong> — <code>primary</code>, <code>foreground</code> 등 역할 기반 이름 (hex 직접 참조 금지)</li>
+        <li><strong>spacing scale</strong> — <code>x1</code>~<code>x4</code> 고정 스케일, 임의 px 삽입 지양</li>
+        <li><strong>radius</strong> — <code>sm</code>, <code>md</code> 등 밀도별 단계</li>
+      </ul>
+
+      <h3>다크 모드 (예정)</h3>
+      <p>
+        <code>createThemeContract</code> + <code>createTheme</code>로 light/dark 테마를 분리하고,
+        <code>data-theme</code> 또는 클래스 토글로 전환합니다. 토큰 구조는 유지하고 값만 교체합니다.
+      </p>
+    </section>
+
+    <section id="components">
+      <h2>5. 컴포넌트 전략</h2>
+      <p>각 primitive는 <strong>스타일 파일</strong>과 <strong>마크업 파일</strong>을 분리합니다.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>파일</th>
+            <th>역할</th>
+            <th>예시</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>*.css.ts</code></td>
+            <td>vanilla-extract <code>style</code>, <code>recipe</code>, variant 정의</td>
+            <td><code>button.css.ts</code></td>
+          </tr>
+          <tr>
+            <td><code>*.jsx</code></td>
+            <td>props → className 매핑, 접근성 속성, DOM 구조</td>
+            <td><code>button.jsx</code></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <h3>Button API 설계</h3>
+      <ul>
+        <li><code>variant</code>: <code>solid</code> | <code>outline</code> — 시각적 의미</li>
+        <li><code>size</code>: <code>sm</code> | <code>md</code> — 터치·가독성 밀도</li>
+        <li><code>defaultVariants</code> — 미지정 시 <code>solid</code> + <code>md</code></li>
+        <li><code>className</code> — escape hatch (최소 사용, 앱 전용 오버라이드)</li>
+      </ul>
+
+      <div class="callout">
+        컴포넌트에 비즈니스 로직을 넣지 않습니다. 데이터 페칭, 권한, 폼 검증은 소비 앱 책임입니다.
+      </div>
+    </section>
+
+    <section id="styling">
+      <h2>6. 스타일링 패턴</h2>
+
+      <h3>recipe 패턴 (권장)</h3>
+      <p>variant 조합이 있는 컴포넌트는 <code>@vanilla-extract/recipes</code>의 <code>recipe()</code>를 사용합니다.</p>
+      <pre><code>const base = style({ /* 공통 */ });
+
+export const buttonStyles = recipe({
+  base,
+  variants: { variant: { ... }, size: { ... } },
+  defaultVariants: { variant: "solid", size: "md" }
+});
+
+// 사용: buttonStyles({ variant: "outline", size: "sm" })</code></pre>
+
+      <h3>style 패턴 (보조)</h3>
+      <p>단일 클래스·레이아웃 유틸·앱 전용 국소 스타일은 <code>style()</code>만 사용합니다.</p>
+
+      <h3>CSS Modules에서의 전환 매핑</h3>
+      <table>
+        <thead>
+          <tr>
+            <th>CSS Modules</th>
+            <th>vanilla-extract</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>Button.module.css</code></td>
+            <td><code>button.css.ts</code></td>
+          </tr>
+          <tr>
+            <td><code>styles.primary</code></td>
+            <td><code>buttonStyles({ variant: "solid" })</code></td>
+          </tr>
+          <tr>
+            <td><code>composes:</code> / 중복 클래스</td>
+            <td><code>recipe</code> base + variants</td>
+          </tr>
+          <tr>
+            <td>SCSS <code>$color-primary</code></td>
+            <td><code>vars.color.primary</code></td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="build">
+      <h2>7. 빌드·모듈 해석 전략</h2>
+      <p>워크스페이스 패키지는 <strong>dist-first</strong> 정책을 따릅니다.</p>
+
+      <table>
+        <thead>
+          <tr>
+            <th>환경</th>
+            <th><code>@ve/tokens</code> 해석</th>
+            <th>빌드 선행 필요</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>IDE / <code>tsc --noEmit</code></td>
+            <td><code>packages/tokens/dist/</code></td>
+            <td>예</td>
+          </tr>
+          <tr>
+            <td>Storybook (Vite alias)</td>
+            <td><code>packages/tokens/src/</code></td>
+            <td>아니오 (dev)</td>
+          </tr>
+          <tr>
+            <td>프로덕션 번들</td>
+            <td><code>dist/</code> via package exports</td>
+            <td>예</td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="callout accent">
+        <strong>운영 규칙:</strong> 클론 직후 <code>pnpm build</code>를 실행한다.
+        Turbo <code>build</code> 태스크는 <code>dependsOn: ["^build"]</code>로 의존 패키지 순서를 보장한다.
+      </div>
+
+      <h3>빌드 도구</h3>
+      <ul>
+        <li><strong>tsup</strong> — ESM + d.ts 생성</li>
+        <li><strong>@vanilla-extract/esbuild-plugin</strong> — <code>.css.ts</code> → 정적 CSS 추출</li>
+        <li><strong>@vanilla-extract/vite-plugin</strong> — Storybook·Vite 앱 dev/build</li>
+      </ul>
+    </section>
+
+    <section id="consumption">
+      <h2>8. 소비 앱 연동 전략</h2>
+
+      <h3>의존성</h3>
+      <pre><code>{
+  "dependencies": {
+    "@ve/ui": "workspace:*",
+    "@ve/tokens": "workspace:*"
+  }
+}</code></pre>
+
+      <h3>앱 부트스트랩</h3>
+      <pre><code>// main.jsx — 글로벌 테마 CSS 주입
+import "@ve/tokens";
+import { Button } from "@ve/ui";</code></pre>
+
+      <h3>Strangler Fig (점진 교체)</h3>
+      <ol>
+        <li>신규 화면·기능부터 <code>@ve/ui</code> 적용</li>
+        <li>기존 CSS Modules 화면은 수정 시점에만 교체</li>
+        <li>교체 전·후 동일 스토리를 Storybook에 등록해 회귀 기준 확보</li>
+      </ol>
+    </section>
+
+    <section id="quality">
+      <h2>9. 품질·계약 전략</h2>
+      <ul>
+        <li><strong>Storybook</strong> — variant·size 조합의 시각 계약, controls로 prop 탐색</li>
+        <li><strong>check-types</strong> — 패키지별 <code>tsc --noEmit</code>, recipe 타입 추론 검증</li>
+        <li><strong>Turbo pipeline</strong> — <code>build → lint → check-types → test</code></li>
+        <li><strong>회귀 방지</strong> — (선택) Chromatic 등 시각 스냅샷</li>
+      </ul>
+
+      <p>컴포넌트 변경 시 스토리 업데이트를 PR 체크리스트에 포함합니다.</p>
+    </section>
+
+    <section id="roadmap">
+      <h2>10. 로드맵</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>단계</th>
+            <th>항목</th>
+            <th>상태</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>v0.1</td>
+            <td>Button (solid/outline, sm/md), 토큰, Storybook</td>
+            <td>완료</td>
+          </tr>
+          <tr>
+            <td>v0.2</td>
+            <td>Foundations 스토리 (color, spacing, typography)</td>
+            <td>예정</td>
+          </tr>
+          <tr>
+            <td>v0.3</td>
+            <td>Input, Card — 동일 recipe 패턴</td>
+            <td>예정</td>
+          </tr>
+          <tr>
+            <td>v0.4</td>
+            <td>Light/Dark theme contract</td>
+            <td>예정</td>
+          </tr>
+          <tr>
+            <td>v1.0</td>
+            <td>소비 앱 CSS Modules 0%, CI green</td>
+            <td>목표</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+
+    <section id="migration">
+      <h2>11. 전환 시나리오 요약</h2>
+      <p>상세 단계는 <code>README.md</code>를 참고합니다. Phase별 핵심만 요약합니다.</p>
+      <table>
+        <thead>
+          <tr>
+            <th>Phase</th>
+            <th>기간</th>
+            <th>핵심 산출물</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>0 준비</td>
+            <td>1–2주</td>
+            <td>토큰·컴포넌트 인벤토리, 우선순위</td>
+          </tr>
+          <tr>
+            <td>1 골격</td>
+            <td>1주</td>
+            <td>모노레포, tokens/ui/storybook</td>
+          </tr>
+          <tr>
+            <td>2 이전</td>
+            <td>2–4주</td>
+            <td>primitive recipe 이전</td>
+          </tr>
+          <tr>
+            <td>3 연동</td>
+            <td>2–3주</td>
+            <td>프로덕션 앱 1차 적용</td>
+          </tr>
+          <tr>
+            <td>4 정리</td>
+            <td>1–3개월</td>
+            <td>CSS Modules 제거</td>
+          </tr>
+          <tr>
+            <td>5 운영</td>
+            <td>병행</td>
+            <td>CI, 시각 회귀, 버전 관리</td>
+          </tr>
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <footer>
+  <p>VE Design System · design-strategy.html · 관련 문서: design.md, README.md</p>
+  </footer>
+</body>
+</html>
