@@ -9,7 +9,7 @@
 
 ## Initial Scope
 
-- `Button` component with `variant` (`solid`, `outline`) and `size` (`sm`, `md`).
+- `Button` component with `variant` (`solid`, `outline`, `ghost`, `danger`, `link`), `size` (`sm`, `md`, `lg`, `icon`), loading/icons/fullWidth/asChild.
 - Storybook as visual contract for component behavior.
 
 ## Next Steps
