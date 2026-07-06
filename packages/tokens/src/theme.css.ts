@@ -7,9 +7,15 @@ export const vars = createGlobalTheme(":root", {
     primary: "#2563eb",
     primaryForeground: "#ffffff",
     primaryHover: "#1d4ed8",
+    primarySubtle: "#eff6ff",
+    secondary: "#f3f4f6",
+    secondaryForeground: "#374151",
+    secondaryHover: "#e5e7eb",
     danger: "#dc2626",
     dangerForeground: "#ffffff",
     dangerHover: "#b91c1c",
+    dangerSubtle: "#fef2f2",
+    dangerBorder: "#fecaca",
     muted: "#f3f4f6",
     mutedForeground: "#6b7280",
     border: "#e5e7eb",
@@ -35,5 +41,8 @@ export const vars = createGlobalTheme(":root", {
     iconSm: "14px",
     iconMd: "16px",
     iconLg: "18px"
+  },
+  shadow: {
+    sm: "0 1px 2px rgba(15, 23, 42, 0.06)"
   }
 });

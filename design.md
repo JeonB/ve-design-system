@@ -9,7 +9,8 @@
 
 ## Initial Scope
 
-- `Button` component with `variant` (`solid`, `outline`, `ghost`, `danger`, `link`), `size` (`sm`, `md`, `lg`, `icon`), loading/icons/fullWidth/asChild.
+- `Button` component with `variant` (`solid`, `secondary`, `outline`, `ghost`, `danger`, `dangerOutline`, `link`), `size` (`sm`, `md`, `lg`, `icon`), loading/icons/fullWidth/asChild/pressed.
+- `ButtonGroup` for dialog footers and attached toolbars.
 - Storybook as visual contract for component behavior.
 
 ## Next Steps

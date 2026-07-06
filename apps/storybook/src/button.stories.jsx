@@ -1,4 +1,5 @@
-import { Button } from "@ve/ui";
+import { useState } from "react";
+import { Button, ButtonGroup, ButtonGroupSeparator } from "@ve/ui";
 
 const meta = {
   title: "Components/Button",
@@ -9,7 +10,7 @@ const meta = {
   argTypes: {
     variant: {
       control: "select",
-      options: ["solid", "outline", "ghost", "danger", "link"]
+      options: ["solid", "secondary", "outline", "ghost", "danger", "dangerOutline", "link"]
     },
     size: {
       control: "select",
@@ -18,7 +19,8 @@ const meta = {
     loading: { control: "boolean" },
     fullWidth: { control: "boolean" },
     disabled: { control: "boolean" },
-    iconOnly: { control: "boolean" }
+    iconOnly: { control: "boolean" },
+    pressed: { control: "boolean" }
   },
   args: {
     children: "Button",
@@ -30,38 +32,31 @@ const meta = {
 export default meta;
 
 export const Solid = {
-  args: {
-    variant: "solid",
-    children: "Save changes"
-  }
+  args: { variant: "solid", children: "Save changes" }
+};
+
+export const Secondary = {
+  args: { variant: "secondary", children: "Secondary action" }
 };
 
 export const Outline = {
-  args: {
-    variant: "outline",
-    children: "Cancel"
-  }
+  args: { variant: "outline", children: "Cancel" }
 };
 
 export const Ghost = {
-  args: {
-    variant: "ghost",
-    children: "More options"
-  }
+  args: { variant: "ghost", children: "More options" }
 };
 
 export const Danger = {
-  args: {
-    variant: "danger",
-    children: "Delete account"
-  }
+  args: { variant: "danger", children: "Delete account" }
+};
+
+export const DangerOutline = {
+  args: { variant: "dangerOutline", children: "Remove access" }
 };
 
 export const Link = {
-  args: {
-    variant: "link",
-    children: "Learn more"
-  }
+  args: { variant: "link", children: "Learn more" }
 };
 
 export const Sizes = {
@@ -124,24 +119,30 @@ export const IconOnly = {
 };
 
 export const Loading = {
-  args: {
-    loading: true,
-    children: "Submit"
-  }
+  args: { loading: true, children: "Submit" }
 };
 
 export const LoadingWithText = {
-  args: {
-    loading: true,
-    loadingText: "Saving…",
-    children: "Save"
-  }
+  args: { loading: true, loadingText: "Saving…", children: "Save" }
 };
 
 export const Disabled = {
-  args: {
-    disabled: true,
-    children: "Unavailable"
+  args: { disabled: true, children: "Unavailable" }
+};
+
+export const TogglePressed = {
+  render: function TogglePressedStory() {
+    const [pressed, setPressed] = useState(false);
+
+    return (
+      <Button
+        pressed={pressed}
+        variant="secondary"
+        onClick={() => setPressed((value) => !value)}
+      >
+        {pressed ? "Bold on" : "Bold off"}
+      </Button>
+    );
   }
 };
 
@@ -163,23 +164,77 @@ export const AsChildLink = {
   )
 };
 
+export const DialogFooter = {
+  render: () => (
+    <ButtonGroup gap="sm">
+      <Button variant="outline">Cancel</Button>
+      <Button>Confirm</Button>
+    </ButtonGroup>
+  )
+};
+
+export const AttachedToolbar = {
+  render: () => (
+    <ButtonGroup attached>
+      <Button variant="outline">Left</Button>
+      <Button variant="outline">Center</Button>
+      <Button variant="outline">Right</Button>
+    </ButtonGroup>
+  )
+};
+
+export const AttachedWithSeparator = {
+  render: () => (
+    <ButtonGroup attached>
+      <Button variant="secondary">Edit</Button>
+      <ButtonGroupSeparator />
+      <Button variant="secondary" iconOnly aria-label="More">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true">
+          <circle cx="3" cy="8" r="1.5" />
+          <circle cx="8" cy="8" r="1.5" />
+          <circle cx="13" cy="8" r="1.5" />
+        </svg>
+      </Button>
+    </ButtonGroup>
+  )
+};
+
 export const DestructiveConfirmation = {
   render: () => (
-    <div style={{ display: "flex", gap: "8px" }}>
+    <ButtonGroup>
       <Button variant="outline">Cancel</Button>
       <Button variant="danger">Delete project</Button>
-    </div>
+    </ButtonGroup>
   )
 };
 
 export const AllVariants = {
   render: () => (
-    <div style={{ display: "grid", gap: "12px" }}>
-      {["solid", "outline", "ghost", "danger", "link"].map((variant) => (
-        <Button key={variant} variant={variant}>
-          {variant}
-        </Button>
-      ))}
+    <div style={{ display: "grid", gap: "12px", minWidth: "220px" }}>
+      {["solid", "secondary", "outline", "ghost", "danger", "dangerOutline", "link"].map(
+        (variant) => (
+          <Button key={variant} variant={variant}>
+            {variant}
+          </Button>
+        )
+      )}
     </div>
+  )
+};
+
+export const FormSubmit = {
+  render: () => (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+      }}
+      style={{ display: "grid", gap: "12px", width: "280px" }}
+    >
+      <label htmlFor="email">Email</label>
+      <input id="email" name="email" type="email" placeholder="you@company.com" />
+      <Button type="submit" fullWidth>
+        Continue
+      </Button>
+    </form>
   )
 };

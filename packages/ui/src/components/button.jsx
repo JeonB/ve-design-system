@@ -1,4 +1,6 @@
-import { Children, cloneElement, isValidElement } from "react";
+import { Children, cloneElement, isValidElement, useLayoutEffect, useRef, useState } from "react";
+import { cn } from "../utils/cn";
+import { mergeRefs } from "../utils/merge-refs";
 import {
   buttonIconSlot,
   buttonLabel,
@@ -6,6 +8,7 @@ import {
   buttonStyles,
   spinnerStyles
 } from "./button.css";
+import { VisuallyHidden } from "./visually-hidden";
 
 const SPINNER_SIZE_BY_BUTTON = {
   sm: "sm",
@@ -16,16 +19,8 @@ const SPINNER_SIZE_BY_BUTTON = {
 
 function Spinner({ size = "md" }) {
   return (
-    <span
-      aria-hidden="true"
-      className={spinnerStyles({ size })}
-      role="presentation"
-    />
+    <span aria-hidden="true" className={spinnerStyles({ size })} role="presentation" />
   );
-}
-
-function mergeClassNames(...values) {
-  return values.filter(Boolean).join(" ");
 }
 
 function warnIconOnlyWithoutLabel(iconOnly, ariaLabel) {
@@ -36,9 +31,22 @@ function warnIconOnlyWithoutLabel(iconOnly, ariaLabel) {
   }
 }
 
+function getLoadingAnnouncement(loadingText, children) {
+  if (typeof loadingText === "string" && loadingText.length > 0) {
+    return loadingText;
+  }
+
+  if (typeof children === "string" && children.length > 0) {
+    return `${children} 처리 중`;
+  }
+
+  return "처리 중";
+}
+
 /**
  * @param {object} props
- * @param {"solid"|"outline"|"ghost"|"danger"|"link"} [props.variant]
+ * @param {import('react').Ref<HTMLButtonElement>} [props.ref]
+ * @param {"solid"|"secondary"|"outline"|"ghost"|"danger"|"dangerOutline"|"link"} [props.variant]
  * @param {"sm"|"md"|"lg"|"icon"} [props.size]
  * @param {boolean} [props.fullWidth]
  * @param {boolean} [props.loading]
@@ -46,12 +54,14 @@ function warnIconOnlyWithoutLabel(iconOnly, ariaLabel) {
  * @param {import('react').ReactNode} [props.leftIcon]
  * @param {import('react').ReactNode} [props.rightIcon]
  * @param {boolean} [props.iconOnly]
+ * @param {boolean} [props.pressed]
  * @param {boolean} [props.asChild]
  * @param {string} [props.className]
  * @param {string} [props.type]
  * @param {import('react').ReactNode} props.children
  */
 export function Button({
+  ref,
   variant,
   size,
   fullWidth = false,
@@ -60,21 +70,38 @@ export function Button({
   leftIcon,
   rightIcon,
   iconOnly = false,
+  pressed,
   asChild = false,
   disabled = false,
   type = "button",
   className,
   children,
   "aria-label": ariaLabel,
+  style,
   ...props
 }) {
+  const innerRef = useRef(null);
+  const [lockedWidth, setLockedWidth] = useState(undefined);
   const resolvedSize = iconOnly ? "icon" : size;
   const isDisabled = Boolean(disabled || loading);
   const spinnerSize = SPINNER_SIZE_BY_BUTTON[resolvedSize ?? "md"];
+  const iconSlotSize = resolvedSize ?? "md";
 
   warnIconOnlyWithoutLabel(iconOnly, ariaLabel);
 
-  const classes = mergeClassNames(
+  useLayoutEffect(() => {
+    if (!loading) {
+      setLockedWidth(undefined);
+      return;
+    }
+
+    const node = innerRef.current;
+    if (!node || lockedWidth !== undefined) return;
+
+    setLockedWidth(node.offsetWidth);
+  }, [loading, lockedWidth]);
+
+  const classes = cn(
     buttonStyles({
       variant,
       size: resolvedSize,
@@ -86,38 +113,49 @@ export function Button({
 
   const sharedProps = {
     ...props,
+    ref: mergeRefs(ref, innerRef),
     className: classes,
+    style: lockedWidth ? { minWidth: lockedWidth, ...(style ?? {}) } : style,
     "aria-busy": loading || undefined,
     "aria-disabled": isDisabled || undefined,
+    "aria-pressed": pressed ?? undefined,
     "data-loading": loading ? "true" : undefined,
-    "data-icon-only": iconOnly ? "true" : undefined
+    "data-icon-only": iconOnly ? "true" : undefined,
+    "data-pressed": pressed ? "true" : undefined
   };
 
   const content = (
     <>
       {loading ? (
-        <span className={buttonSpinnerOverlay}>
-          <Spinner size={spinnerSize} />
-        </span>
+        <>
+          <span className={buttonSpinnerOverlay}>
+            <Spinner size={spinnerSize} />
+          </span>
+          <VisuallyHidden aria-live="polite">
+            {getLoadingAnnouncement(loadingText, children)}
+          </VisuallyHidden>
+        </>
       ) : null}
       {!loading && leftIcon && !iconOnly ? (
-        <span className={buttonIconSlot}>{leftIcon}</span>
+        <span className={buttonIconSlot({ size: iconSlotSize })}>{leftIcon}</span>
       ) : null}
       {!iconOnly ? (
-        <span className={buttonLabel}>{loading && loadingText ? loadingText : children}</span>
+        <span aria-hidden={loading ? true : undefined} className={buttonLabel}>
+          {children}
+        </span>
       ) : (
-        <span className={buttonIconSlot}>{children}</span>
+        <span className={buttonIconSlot({ size: iconSlotSize })}>{children}</span>
       )}
       {!loading && rightIcon && !iconOnly ? (
-        <span className={buttonIconSlot}>{rightIcon}</span>
+        <span className={buttonIconSlot({ size: iconSlotSize })}>{rightIcon}</span>
       ) : null}
     </>
   );
 
   if (asChild) {
-    if (loading || leftIcon || rightIcon || iconOnly) {
+    if (loading || leftIcon || rightIcon || iconOnly || pressed !== undefined) {
       throw new Error(
-        "[@ve/ui Button] asChild는 loading·icon 슬롯·iconOnly와 함께 사용할 수 없습니다."
+        "[@ve/ui Button] asChild는 loading·icon·iconOnly·pressed와 함께 사용할 수 없습니다."
       );
     }
 
@@ -130,16 +168,21 @@ export function Button({
     return cloneElement(child, {
       ...child.props,
       ...sharedProps,
-      className: mergeClassNames(classes, child.props.className),
+      ref: mergeRefs(ref, innerRef, child.props.ref),
+      className: cn(classes, child.props.className),
       "aria-label": ariaLabel ?? child.props["aria-label"],
       ...(isDisabled ? { tabIndex: -1 } : {})
     });
   }
 
+  const accessibleLabel = loading
+    ? getLoadingAnnouncement(loadingText, children)
+    : ariaLabel;
+
   return (
     <button
       {...sharedProps}
-      aria-label={ariaLabel}
+      aria-label={accessibleLabel}
       disabled={isDisabled}
       type={type}
     >
