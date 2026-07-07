@@ -9,18 +9,30 @@ export const spin = keyframes({
 export const spinnerStyles = recipe({
   base: {
     display: "inline-block",
-    borderRadius: "50%",
+    borderRadius: vars.radius.full,
     borderStyle: "solid",
     borderColor: "currentColor",
-    borderTopColor: "transparent",
-    animation: `${spin} 600ms linear infinite`,
+    borderTopColor: vars.color.transparent,
+    animation: `${spin} ${vars.motion.duration.spinner} ${vars.motion.easing.linear} infinite`,
     flexShrink: 0
   },
   variants: {
     size: {
-      sm: { width: "14px", height: "14px", borderWidth: "2px" },
-      md: { width: "16px", height: "16px", borderWidth: "2px" },
-      lg: { width: "18px", height: "18px", borderWidth: "2px" }
+      sm: {
+        width: vars.size.icon.sm,
+        height: vars.size.icon.sm,
+        borderWidth: vars.size.border.spinner
+      },
+      md: {
+        width: vars.size.icon.md,
+        height: vars.size.icon.md,
+        borderWidth: vars.size.border.spinner
+      },
+      lg: {
+        width: vars.size.icon.lg,
+        height: vars.size.icon.lg,
+        borderWidth: vars.size.border.spinner
+      }
     }
   },
   defaultVariants: { size: "md" }
@@ -34,31 +46,30 @@ const base = style({
   alignItems: "center",
   justifyContent: "center",
   gap: vars.space.x2,
-  border: "1px solid transparent",
+  border: `${vars.size.border.hairline} solid ${vars.color.transparent}`,
   borderRadius: vars.radius.sm,
   fontFamily: vars.font.body,
-  fontWeight: 600,
-  lineHeight: 1,
+  fontWeight: vars.font.weight.semibold,
+  lineHeight: vars.font.lineHeight.tight,
   whiteSpace: "nowrap",
   userSelect: "none",
   cursor: "pointer",
   boxShadow: vars.shadow.sm,
-  transition:
-    "background 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease, transform 80ms ease",
+  transition: vars.motion.transition.button,
   selectors: {
     "&:focus-visible": {
-      outline: `2px solid ${vars.color.ring}`,
-      outlineOffset: "2px",
-      zIndex: 1
+      outline: `${vars.focus.ringWidth} solid ${vars.color.ring}`,
+      outlineOffset: vars.focus.ringOffset,
+      zIndex: vars.zIndex.focus
     },
     "&:disabled, &[aria-disabled='true']": {
       cursor: "not-allowed",
-      opacity: 0.55,
+      opacity: vars.opacity.disabled,
       pointerEvents: "none",
-      boxShadow: "none"
+      boxShadow: vars.shadow.none
     },
     "&[data-pressed='true']:not(:disabled):not([aria-disabled='true'])": {
-      transform: "translateY(1px)"
+      transform: `translateY(${vars.effect.translate.pressed})`
     }
   }
 });
@@ -69,14 +80,14 @@ export const buttonIconSlot = recipe({
     flexShrink: 0,
     alignItems: "center",
     justifyContent: "center",
-    lineHeight: 0
+    lineHeight: vars.space.x0
   },
   variants: {
     size: {
-      sm: { width: vars.size.iconSm, height: vars.size.iconSm },
-      md: { width: vars.size.iconMd, height: vars.size.iconMd },
-      lg: { width: vars.size.iconLg, height: vars.size.iconLg },
-      icon: { width: vars.size.iconMd, height: vars.size.iconMd }
+      sm: { width: vars.size.icon.sm, height: vars.size.icon.sm },
+      md: { width: vars.size.icon.md, height: vars.size.icon.md },
+      lg: { width: vars.size.icon.lg, height: vars.size.icon.lg },
+      icon: { width: vars.size.icon.md, height: vars.size.icon.md }
     }
   },
   defaultVariants: { size: "md" }
@@ -94,7 +105,7 @@ export const buttonLabel = style({
 
 export const buttonSpinnerOverlay = style({
   position: "absolute",
-  inset: 0,
+  inset: vars.space.x0,
   display: "inline-flex",
   alignItems: "center",
   justifyContent: "center"
@@ -116,34 +127,38 @@ export const buttonStyles = recipe({
             background: vars.color.primaryHover,
             borderColor: vars.color.primaryHover
           },
-          [interactiveActive]: { filter: "brightness(0.92)" }
+          [interactiveActive]: {
+            filter: `brightness(${vars.effect.brightness.active})`
+          }
         }
       },
       secondary: {
         background: vars.color.secondary,
         color: vars.color.secondaryForeground,
         borderColor: vars.color.border,
-        boxShadow: "none",
+        boxShadow: vars.shadow.none,
         selectors: {
           [interactiveHover]: { background: vars.color.secondaryHover },
-          [interactiveActive]: { filter: "brightness(0.97)" }
+          [interactiveActive]: {
+            filter: `brightness(${vars.effect.brightness.activeSoft})`
+          }
         }
       },
       outline: {
         background: vars.color.background,
         color: vars.color.foreground,
         borderColor: vars.color.border,
-        boxShadow: "none",
+        boxShadow: vars.shadow.none,
         selectors: {
           [interactiveHover]: { background: vars.color.muted },
           [interactiveActive]: { background: vars.color.ghostHover }
         }
       },
       ghost: {
-        background: "transparent",
+        background: vars.color.transparent,
         color: vars.color.foreground,
-        borderColor: "transparent",
-        boxShadow: "none",
+        borderColor: vars.color.transparent,
+        boxShadow: vars.shadow.none,
         selectors: {
           [interactiveHover]: { background: vars.color.ghostHover },
           [interactiveActive]: { background: vars.color.muted }
@@ -158,63 +173,67 @@ export const buttonStyles = recipe({
             background: vars.color.dangerHover,
             borderColor: vars.color.dangerHover
           },
-          [interactiveActive]: { filter: "brightness(0.92)" }
+          [interactiveActive]: {
+            filter: `brightness(${vars.effect.brightness.active})`
+          }
         }
       },
       dangerOutline: {
         background: vars.color.dangerSubtle,
         color: vars.color.danger,
         borderColor: vars.color.dangerBorder,
-        boxShadow: "none",
+        boxShadow: vars.shadow.none,
         selectors: {
           [interactiveHover]: {
             background: vars.color.dangerSubtle,
             borderColor: vars.color.danger
           },
-          [interactiveActive]: { filter: "brightness(0.97)" }
+          [interactiveActive]: {
+            filter: `brightness(${vars.effect.brightness.activeSoft})`
+          }
         }
       },
       link: {
-        background: "transparent",
+        background: vars.color.transparent,
         color: vars.color.primary,
-        borderColor: "transparent",
-        paddingInline: 0,
+        borderColor: vars.color.transparent,
+        paddingInline: vars.space.x0,
         minHeight: "auto",
-        boxShadow: "none",
+        boxShadow: vars.shadow.none,
         selectors: {
           [interactiveHover]: {
             textDecoration: "underline",
-            textUnderlineOffset: "3px"
+            textUnderlineOffset: vars.font.decoration.underlineOffset
           }
         }
       }
     },
     size: {
       sm: {
-        minHeight: "32px",
-        padding: `${vars.space.x1} ${vars.space.x3}`,
-        fontSize: "13px",
+        minHeight: vars.component.button.height.sm,
+        padding: vars.component.button.padding.sm,
+        fontSize: vars.font.size.sm,
         gap: vars.space.x1
       },
       md: {
-        minHeight: "40px",
-        padding: `${vars.space.x2} ${vars.space.x4}`,
-        fontSize: "14px"
+        minHeight: vars.component.button.height.md,
+        padding: vars.component.button.padding.md,
+        fontSize: vars.font.size.md
       },
       lg: {
-        minHeight: "48px",
-        padding: `${vars.space.x3} ${vars.space.x6}`,
-        fontSize: "16px",
+        minHeight: vars.component.button.height.lg,
+        padding: vars.component.button.padding.lg,
+        fontSize: vars.font.size.lg,
         gap: vars.space.x3
       },
       icon: {
-        minHeight: "40px",
-        minWidth: "40px",
-        padding: vars.space.x2
+        minHeight: vars.component.button.height.icon,
+        minWidth: vars.component.button.height.icon,
+        padding: vars.component.button.padding.icon
       }
     },
     fullWidth: {
-      true: { width: "100%" },
+      true: { width: vars.layout.full },
       false: {}
     },
     loading: {
@@ -223,17 +242,39 @@ export const buttonStyles = recipe({
     }
   },
   compoundVariants: [
-    { variants: { variant: "link", size: "sm" }, style: { minHeight: "auto", padding: 0, fontSize: "13px" } },
-    { variants: { variant: "link", size: "md" }, style: { minHeight: "auto", padding: 0, fontSize: "14px" } },
-    { variants: { variant: "link", size: "lg" }, style: { minHeight: "auto", padding: 0, fontSize: "16px" } },
-    { variants: { size: "icon", variant: "solid" }, style: { borderRadius: vars.radius.sm } },
-    { variants: { size: "icon", variant: "outline" }, style: { minHeight: "40px", minWidth: "40px" } },
-    { variants: { size: "icon", variant: "ghost" }, style: { minHeight: "40px", minWidth: "40px" } },
-    { variants: { size: "icon", variant: "secondary" }, style: { minHeight: "40px", minWidth: "40px" } },
-    { variants: { size: "sm", variant: "solid" }, style: { minHeight: "32px" } },
-    { variants: { size: "lg", variant: "solid" }, style: { minHeight: "48px" } },
-    { variants: { size: "sm", variant: "secondary" }, style: { minHeight: "32px" } },
-    { variants: { size: "lg", variant: "secondary" }, style: { minHeight: "48px" } }
+    {
+      variants: { variant: "link", size: "sm" },
+      style: { minHeight: "auto", padding: vars.space.x0, fontSize: vars.font.size.sm }
+    },
+    {
+      variants: { variant: "link", size: "md" },
+      style: { minHeight: "auto", padding: vars.space.x0, fontSize: vars.font.size.md }
+    },
+    {
+      variants: { variant: "link", size: "lg" },
+      style: { minHeight: "auto", padding: vars.space.x0, fontSize: vars.font.size.lg }
+    },
+    {
+      variants: { size: "icon", variant: "outline" },
+      style: {
+        minHeight: vars.component.button.height.icon,
+        minWidth: vars.component.button.height.icon
+      }
+    },
+    {
+      variants: { size: "icon", variant: "ghost" },
+      style: {
+        minHeight: vars.component.button.height.icon,
+        minWidth: vars.component.button.height.icon
+      }
+    },
+    {
+      variants: { size: "icon", variant: "secondary" },
+      style: {
+        minHeight: vars.component.button.height.icon,
+        minWidth: vars.component.button.height.icon
+      }
+    }
   ],
   defaultVariants: {
     variant: "solid",

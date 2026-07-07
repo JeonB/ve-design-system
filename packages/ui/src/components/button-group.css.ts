@@ -6,7 +6,7 @@ export const buttonGroupRoot = recipe({
   base: {
     display: "inline-flex",
     alignItems: "stretch",
-    maxWidth: "100%"
+    maxWidth: vars.layout.full
   },
   variants: {
     orientation: {
@@ -14,7 +14,7 @@ export const buttonGroupRoot = recipe({
       vertical: { flexDirection: "column" }
     },
     fullWidth: {
-      true: { width: "100%" },
+      true: { width: vars.layout.full },
       false: {}
     },
     gap: {
@@ -42,11 +42,11 @@ export const buttonGroupRoot = recipe({
     },
     {
       variants: { gap: "none", orientation: "horizontal" },
-      style: { gap: 0 }
+      style: { gap: vars.space.x0 }
     },
     {
       variants: { gap: "none", orientation: "vertical" },
-      style: { gap: 0 }
+      style: { gap: vars.space.x0 }
     }
   ],
   defaultVariants: {
@@ -60,45 +60,45 @@ export const buttonGroupAttachedHorizontal = style({});
 export const buttonGroupAttachedVertical = style({});
 
 globalStyle(`${buttonGroupAttachedHorizontal} > *:not(:first-child)`, {
-  marginLeft: "-1px"
+  marginLeft: vars.size.border.overlap
 });
 
 globalStyle(`${buttonGroupAttachedHorizontal} > *:first-child:not(:only-child)`, {
-  borderTopRightRadius: 0,
-  borderBottomRightRadius: 0
+  borderTopRightRadius: vars.radius.none,
+  borderBottomRightRadius: vars.radius.none
 });
 
 globalStyle(`${buttonGroupAttachedHorizontal} > *:last-child:not(:only-child)`, {
-  borderTopLeftRadius: 0,
-  borderBottomLeftRadius: 0
+  borderTopLeftRadius: vars.radius.none,
+  borderBottomLeftRadius: vars.radius.none
 });
 
 globalStyle(`${buttonGroupAttachedHorizontal} > *:not(:first-child):not(:last-child)`, {
-  borderRadius: 0
+  borderRadius: vars.radius.none
 });
 
 globalStyle(`${buttonGroupAttachedVertical} > *:not(:first-child)`, {
-  marginTop: "-1px"
+  marginTop: vars.size.border.overlap
 });
 
 globalStyle(`${buttonGroupAttachedVertical} > *:first-child:not(:only-child)`, {
-  borderBottomLeftRadius: 0,
-  borderBottomRightRadius: 0
+  borderBottomLeftRadius: vars.radius.none,
+  borderBottomRightRadius: vars.radius.none
 });
 
 globalStyle(`${buttonGroupAttachedVertical} > *:last-child:not(:only-child)`, {
-  borderTopLeftRadius: 0,
-  borderTopRightRadius: 0
+  borderTopLeftRadius: vars.radius.none,
+  borderTopRightRadius: vars.radius.none
 });
 
 globalStyle(`${buttonGroupAttachedVertical} > *:not(:first-child):not(:last-child)`, {
-  borderRadius: 0
+  borderRadius: vars.radius.none
 });
 
 export const buttonGroupSeparator = style({
   flexShrink: 0,
   alignSelf: "stretch",
-  width: "1px",
+  width: vars.size.border.hairline,
   background: vars.color.border,
   marginBlock: vars.space.x1
 });

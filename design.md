@@ -16,5 +16,5 @@
 ## Next Steps
 
 - Add color modes (`light` and `dark`) with `createThemeContract` + `createTheme`.
-- Add foundations stories: colors, spacing, typography.
+- Token categories: `color`, `space`, `radius`, `font`, `component.*`, `motion`, `focus`, `shadow` — see Storybook `Foundations/Tokens`.
 - Add `Input` and `Card` using the same recipe pattern.
