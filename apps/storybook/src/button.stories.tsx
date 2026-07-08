@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Button, ButtonGroup, ButtonGroupSeparator } from "@ve/ui";
+import type { Meta, StoryObj } from "@storybook/react";
+import { Button, ButtonGroup, ButtonGroupSeparator, BUTTON_VARIANTS } from "@ve/ui";
 
 const meta = {
   title: "Components/Button",
@@ -10,7 +11,7 @@ const meta = {
   argTypes: {
     variant: {
       control: "select",
-      options: ["solid", "secondary", "outline", "ghost", "danger", "dangerOutline", "link"]
+      options: [...BUTTON_VARIANTS]
     },
     size: {
       control: "select",
@@ -27,39 +28,41 @@ const meta = {
     variant: "solid",
     size: "md"
   }
-};
+} satisfies Meta<typeof Button>;
 
 export default meta;
 
-export const Solid = {
+type Story = StoryObj<typeof meta>;
+
+export const Solid: Story = {
   args: { variant: "solid", children: "Save changes" }
 };
 
-export const Secondary = {
+export const Secondary: Story = {
   args: { variant: "secondary", children: "Secondary action" }
 };
 
-export const Outline = {
+export const Outline: Story = {
   args: { variant: "outline", children: "Cancel" }
 };
 
-export const Ghost = {
+export const Ghost: Story = {
   args: { variant: "ghost", children: "More options" }
 };
 
-export const Danger = {
+export const Danger: Story = {
   args: { variant: "danger", children: "Delete account" }
 };
 
-export const DangerOutline = {
+export const DangerOutline: Story = {
   args: { variant: "dangerOutline", children: "Remove access" }
 };
 
-export const Link = {
+export const Link: Story = {
   args: { variant: "link", children: "Learn more" }
 };
 
-export const Sizes = {
+export const Sizes: Story = {
   render: () => (
     <div style={{ display: "flex", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
       <Button size="sm">Small</Button>
@@ -69,7 +72,7 @@ export const Sizes = {
   )
 };
 
-export const WithIcons = {
+export const WithIcons: Story = {
   render: () => (
     <div style={{ display: "flex", gap: "12px", flexWrap: "wrap" }}>
       <Button
@@ -95,7 +98,7 @@ export const WithIcons = {
   )
 };
 
-export const IconOnly = {
+export const IconOnly: Story = {
   render: () => (
     <div style={{ display: "flex", gap: "12px" }}>
       <Button iconOnly aria-label="Settings" variant="outline">
@@ -118,19 +121,19 @@ export const IconOnly = {
   )
 };
 
-export const Loading = {
+export const Loading: Story = {
   args: { loading: true, children: "Submit" }
 };
 
-export const LoadingWithText = {
+export const LoadingWithText: Story = {
   args: { loading: true, loadingText: "Saving…", children: "Save" }
 };
 
-export const Disabled = {
+export const Disabled: Story = {
   args: { disabled: true, children: "Unavailable" }
 };
 
-export const TogglePressed = {
+export const TogglePressed: Story = {
   render: function TogglePressedStory() {
     const [pressed, setPressed] = useState(false);
 
@@ -146,7 +149,7 @@ export const TogglePressed = {
   }
 };
 
-export const FullWidth = {
+export const FullWidth: Story = {
   render: () => (
     <div style={{ width: "320px" }}>
       <Button fullWidth>Sign in with email</Button>
@@ -154,7 +157,7 @@ export const FullWidth = {
   )
 };
 
-export const AsChildLink = {
+export const AsChildLink: Story = {
   render: () => (
     <Button asChild variant="outline">
       <a href="https://example.com" target="_blank" rel="noreferrer">
@@ -164,7 +167,7 @@ export const AsChildLink = {
   )
 };
 
-export const DialogFooter = {
+export const DialogFooter: Story = {
   render: () => (
     <ButtonGroup gap="sm">
       <Button variant="outline">Cancel</Button>
@@ -173,7 +176,7 @@ export const DialogFooter = {
   )
 };
 
-export const AttachedToolbar = {
+export const AttachedToolbar: Story = {
   render: () => (
     <ButtonGroup attached>
       <Button variant="outline">Left</Button>
@@ -183,7 +186,7 @@ export const AttachedToolbar = {
   )
 };
 
-export const AttachedWithSeparator = {
+export const AttachedWithSeparator: Story = {
   render: () => (
     <ButtonGroup attached>
       <Button variant="secondary">Edit</Button>
@@ -199,7 +202,7 @@ export const AttachedWithSeparator = {
   )
 };
 
-export const DestructiveConfirmation = {
+export const DestructiveConfirmation: Story = {
   render: () => (
     <ButtonGroup>
       <Button variant="outline">Cancel</Button>
@@ -208,21 +211,19 @@ export const DestructiveConfirmation = {
   )
 };
 
-export const AllVariants = {
+export const AllVariants: Story = {
   render: () => (
     <div style={{ display: "grid", gap: "12px", minWidth: "220px" }}>
-      {["solid", "secondary", "outline", "ghost", "danger", "dangerOutline", "link"].map(
-        (variant) => (
-          <Button key={variant} variant={variant}>
-            {variant}
-          </Button>
-        )
-      )}
+      {BUTTON_VARIANTS.map((variant) => (
+        <Button key={variant} variant={variant}>
+          {variant}
+        </Button>
+      ))}
     </div>
   )
 };
 
-export const FormSubmit = {
+export const FormSubmit: Story = {
   render: () => (
     <form
       onSubmit={(event) => {

@@ -3,7 +3,7 @@ import { vanillaExtractPlugin } from "@vanilla-extract/vite-plugin";
 import { join } from "node:path";
 
 const config: StorybookConfig = {
-  stories: ["../src/**/*.stories.@(ts|tsx|js|jsx|mjs)"],
+  stories: ["../src/**/*.stories.@(ts|tsx)"],
   addons: [],
   framework: "@storybook/react-vite",
   viteFinal: async (viteConfig) => {

@@ -1,25 +1,27 @@
+import type { Meta, StoryObj } from "@storybook/react";
+import type { CSSProperties } from "react";
 import { vars } from "@ve/tokens";
 
-const swatchStyle = {
+const swatchStyle: CSSProperties = {
   width: "48px",
   height: "48px",
   borderRadius: "8px",
   border: "1px solid #e5e7eb"
 };
 
-const sectionStyle = {
+const sectionStyle: CSSProperties = {
   display: "grid",
   gap: "12px",
   marginBottom: "32px"
 };
 
-const gridStyle = {
+const gridStyle: CSSProperties = {
   display: "grid",
   gridTemplateColumns: "repeat(auto-fill, minmax(140px, 1fr))",
   gap: "12px"
 };
 
-const labelStyle = {
+const labelStyle: CSSProperties = {
   fontSize: "12px",
   color: "#64748b",
   fontFamily: "ui-monospace, monospace"
@@ -30,11 +32,13 @@ const meta = {
   parameters: {
     layout: "padded"
   }
-};
+} satisfies Meta;
 
 export default meta;
 
-export const Colors = {
+type Story = StoryObj<typeof meta>;
+
+export const Colors: Story = {
   render: () => {
     const entries = Object.entries(vars.color);
 
@@ -55,7 +59,7 @@ export const Colors = {
   }
 };
 
-export const Spacing = {
+export const Spacing: Story = {
   render: () => {
     const entries = Object.entries(vars.space).filter(([name]) => name !== "x0");
 
@@ -83,7 +87,7 @@ export const Spacing = {
   }
 };
 
-export const Typography = {
+export const Typography: Story = {
   render: () => (
     <section style={sectionStyle}>
       <h2 style={{ margin: 0, fontSize: "18px" }}>Typography</h2>
@@ -101,7 +105,7 @@ export const Typography = {
   )
 };
 
-export const ButtonScale = {
+export const ButtonScale: Story = {
   render: () => (
     <section style={sectionStyle}>
       <h2 style={{ margin: 0, fontSize: "18px" }}>component.button</h2>
@@ -126,7 +130,7 @@ export const ButtonScale = {
   )
 };
 
-export const Motion = {
+export const Motion: Story = {
   render: () => (
     <section style={sectionStyle}>
       <h2 style={{ margin: 0, fontSize: "18px" }}>Motion</h2>

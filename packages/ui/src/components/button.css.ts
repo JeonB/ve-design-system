@@ -38,6 +38,7 @@ export const spinnerStyles = recipe({
   defaultVariants: { size: "md" }
 });
 
+export type SpinnerSize = "sm" | "md" | "lg";
 export type SpinnerStyleVariants = RecipeVariants<typeof spinnerStyles>;
 
 const base = style({
@@ -284,4 +285,14 @@ export const buttonStyles = recipe({
   }
 });
 
+export type ButtonVariant =
+  | "solid"
+  | "secondary"
+  | "outline"
+  | "ghost"
+  | "danger"
+  | "dangerOutline"
+  | "link";
+
+export type ButtonSize = "sm" | "md" | "lg" | "icon";
 export type ButtonStyleVariants = RecipeVariants<typeof buttonStyles>;

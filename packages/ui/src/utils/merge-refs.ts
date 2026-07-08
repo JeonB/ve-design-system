@@ -1,8 +1,7 @@
-/**
- * @param {...import('react').Ref<unknown> | undefined} refs
- */
-export function mergeRefs(...refs) {
-  return (node) => {
+import type { Ref } from "react";
+
+export function mergeRefs<T>(...refs: Array<Ref<T> | undefined>) {
+  return (node: T | null) => {
     for (const ref of refs) {
       if (!ref) continue;
 

@@ -96,7 +96,7 @@ pnpm build
 ve-design-system/
 ├── packages/
 │   ├── tokens/     @ve/tokens  — createGlobalTheme, 디자인 토큰
-│   └── ui/         @ve/ui      — .css.ts(recipe) + .jsx 컴포넌트
+│   └── ui/         @ve/ui      — .css.ts(recipe) + .tsx 컴포넌트
 └── apps/
     └── storybook/              — 시각 계약·문서
 ```
@@ -149,7 +149,7 @@ export const vars = createGlobalTheme(":root", {
 
 | 기존 (CSS Modules) | 전환 후 |
 |--------------------|---------|
-| `Button.module.css` + `className` 조합 | `button.css.ts` (`recipe`) + `button.jsx` |
+| `Button.module.css` + `className` 조합 | `button.css.ts` (`recipe`) + `button.tsx` |
 | `styles.primary`, `styles.large` | `buttonStyles({ variant: "solid", size: "md" })` |
 | 글로벌 SCSS 변수 | `vars.color.primary` 등 토큰 참조 |
 
@@ -159,7 +159,7 @@ export const vars = createGlobalTheme(":root", {
 2. Card, Stack 등 **레이아웃 primitive**
 3. 앱 전용 복합 컴포넌트는 Phase 4까지 유지
 
-**JS 유지**: 기존 앱이 JS면 `@ve/ui`도 `.jsx` + JSDoc으로 시작 가능. 타입은 `.css.ts`와 Storybook에서 확보.
+**TypeScript 전환**: `@ve/ui` 컴포넌트는 `.tsx`, 스타일 recipe는 `.css.ts`, Storybook은 `.stories.tsx`를 사용합니다.
 
 ### Phase 3 — 소비 앱 연동 (2–3주)
 
@@ -187,7 +187,7 @@ export default defineConfig({
 **앱 전역**
 
 ```js
-// main.jsx
+// main.tsx
 import "@ve/tokens"; // :root 테마 CSS 주입
 ```
 
@@ -220,7 +220,7 @@ import "@ve/tokens"; // :root 테마 CSS 주입
 | 리스크 | 완화 |
 |--------|------|
 | `dist` 미빌드로 IDE/CI 타입 오류 | 클론 후 `pnpm build` 필수, turbo `check-types` → `^build` 의존 |
-| JS ↔ TS 혼재 | 토큰·recipe는 `.ts`, 컴포넌트는 `.jsx`로 단계적 도입 |
+| JS ↔ TS 혼재 | 소비 앱은 JS 가능, `@ve/ui`는 TS/TSX + d.ts export |
 | 대량 일괄 교체 | 페이지 단위·컴포넌트 단위 PR, Storybook 스냅샷 |
 | 번들 크기 | vanilla-extract는 빌드 타임 추출; 미사용 recipe는 tree-shake |
 | 팀 학습 곡선 | recipe 패턴·토큰 규칙을 Storybook docs에 고정 |

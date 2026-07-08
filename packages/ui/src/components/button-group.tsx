@@ -1,3 +1,4 @@
+import type { HTMLAttributes, ReactNode } from "react";
 import { Children } from "react";
 import { cn } from "../utils/cn";
 import {
@@ -7,16 +8,14 @@ import {
   buttonGroupSeparator
 } from "./button-group.css";
 
-/**
- * @param {object} props
- * @param {"horizontal"|"vertical"} [props.orientation]
- * @param {boolean} [props.attached]
- * @param {boolean} [props.fullWidth]
- * @param {"sm"|"md"|"none"} [props.gap]
- * @param {string} [props.className]
- * @param {string} [props.role]
- * @param {import('react').ReactNode} props.children
- */
+export type ButtonGroupProps = HTMLAttributes<HTMLDivElement> & {
+  orientation?: "horizontal" | "vertical";
+  attached?: boolean;
+  fullWidth?: boolean;
+  gap?: "sm" | "md" | "none";
+  children: ReactNode;
+};
+
 export function ButtonGroup({
   orientation = "horizontal",
   attached = false,
@@ -26,7 +25,7 @@ export function ButtonGroup({
   role = "group",
   children,
   ...props
-}) {
+}: ButtonGroupProps) {
   const resolvedGap = attached ? "none" : gap;
   const attachedClass =
     attached && orientation === "vertical"
@@ -56,7 +55,9 @@ export function ButtonGroup({
   );
 }
 
-export function ButtonGroupSeparator({ className, ...props }) {
+export type ButtonGroupSeparatorProps = HTMLAttributes<HTMLSpanElement>;
+
+export function ButtonGroupSeparator({ className, ...props }: ButtonGroupSeparatorProps) {
   return (
     <span
       {...props}

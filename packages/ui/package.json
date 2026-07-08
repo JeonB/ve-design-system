@@ -4,8 +4,10 @@
   "private": true,
   "type": "module",
   "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "default": "./dist/index.js"
     }
   },
@@ -27,6 +29,7 @@
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
+    "@types/node": "^22.15.30",
     "@types/react": "^19.1.8",
     "@vanilla-extract/esbuild-plugin": "^2.3.18",
     "@vanilla-extract/vite-plugin": "^5.1.1",
