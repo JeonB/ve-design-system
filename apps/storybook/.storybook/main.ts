@@ -15,6 +15,11 @@ const config: StorybookConfig = {
     return {
       ...viteConfig,
       plugins: [...(viteConfig.plugins ?? []), vanillaExtractPlugin()],
+      esbuild: {
+        ...(viteConfig.esbuild ?? {}),
+        jsx: "automatic",
+        jsxImportSource: "react"
+      },
       resolve: {
         ...(viteConfig.resolve ?? {}),
         alias: {
