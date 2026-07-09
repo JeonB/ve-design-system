@@ -1,0 +1,28 @@
+{
+  "name": "storybook",
+  "private": true,
+  "scripts": {
+    "dev": "storybook dev -p 6006",
+    "build": "CI=1 storybook build",
+    "lint": "echo \"No lint configured for storybook\"",
+    "check-types": "tsc --noEmit",
+    "test": "echo \"No tests yet for storybook\""
+  },
+  "dependencies": {
+    "@ve/tokens": "workspace:*",
+    "@ve/ui": "workspace:*",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@storybook/react": "^8.6.14",
+    "@storybook/react-vite": "^8.6.14",
+    "@types/node": "^22.15.30",
+    "@types/react": "^19.1.8",
+    "@types/react-dom": "^19.1.6",
+    "@vanilla-extract/vite-plugin": "^5.1.1",
+    "storybook": "^8.6.14",
+    "typescript": "^5.9.2",
+    "vite": "^6.3.5"
+  }
+}
