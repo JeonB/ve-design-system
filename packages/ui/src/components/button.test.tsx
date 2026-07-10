@@ -94,14 +94,33 @@ describe("Button", () => {
     );
   });
 
-  it("asChild와 loading 조합은 오류를 던진다", () => {
-    expect(() =>
-      render(
-        <Button asChild loading>
-          <a href="/">Link</a>
-        </Button>
-      )
-    ).toThrow();
+  it("asChild disabled 링크는 클릭을 차단한다", () => {
+    const onClick = vi.fn();
+
+    render(
+      <Button asChild disabled>
+        <a href="https://example.com" onClick={onClick}>
+          Docs
+        </a>
+      </Button>
+    );
+
+    const link = screen.getByRole("link", { name: "Docs" });
+    fireEvent.click(link);
+    expect(onClick).not.toHaveBeenCalled();
+  });
+
+  it("data-slot과 variant 메타데이터를 노출한다", () => {
+    render(
+      <Button variant="secondary" size="sm">
+        Meta
+      </Button>
+    );
+
+    const button = screen.getByRole("button", { name: "Meta" });
+    expect(button).toHaveAttribute("data-slot", "button");
+    expect(button).toHaveAttribute("data-variant", "secondary");
+    expect(button).toHaveAttribute("data-size", "sm");
   });
 });
 

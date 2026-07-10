@@ -2,97 +2,35 @@ import {
   Children,
   cloneElement,
   isValidElement,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type ButtonHTMLAttributes,
-  type ReactElement,
-  type ReactNode,
-  type Ref
+  type MouseEvent,
+  type KeyboardEvent
 } from "react";
 import { cn } from "../utils/cn";
+import { mergeHandlers } from "../utils/merge-handlers";
 import { mergeRefs } from "../utils/merge-refs";
+import { useLoadingWidthLock } from "../hooks/use-loading-width-lock";
+import { buttonStyles, type ButtonSize } from "./button.css";
 import {
-  buttonIconSlot,
-  buttonLabel,
-  buttonSpinnerOverlay,
-  buttonStyles,
-  spinnerStyles,
-  type ButtonSize,
-  type ButtonVariant,
-  type SpinnerSize
-} from "./button.css";
-import { VisuallyHidden } from "./visually-hidden";
+  ButtonContent,
+  getLoadingAnnouncement,
+  warnIconOnlyWithoutLabel
+} from "./button-content";
+import type { AsChildElement, ButtonProps } from "./button.types";
 
-const SPINNER_SIZE_BY_BUTTON: Record<ButtonSize, SpinnerSize> = {
-  sm: "sm",
-  md: "md",
-  lg: "lg",
-  icon: "md"
-};
-
-const BUTTON_VARIANTS = [
-  "solid",
-  "secondary",
-  "outline",
-  "ghost",
-  "danger",
-  "dangerOutline",
-  "link"
-] as const satisfies readonly ButtonVariant[];
-
-export type { ButtonVariant };
-export type ButtonVariantOption = ButtonVariant;
-
-export type ButtonProps = {
-  ref?: Ref<HTMLButtonElement>;
-  variant?: ButtonVariant;
-  size?: ButtonSize;
-  fullWidth?: boolean;
-  loading?: boolean;
-  loadingText?: string;
-  leftIcon?: ReactNode;
-  rightIcon?: ReactNode;
-  iconOnly?: boolean;
-  pressed?: boolean;
-  asChild?: boolean;
-  children: ReactNode;
-} & Omit<ButtonHTMLAttributes<HTMLButtonElement>, "children">;
-
-type AsChildElement = ReactElement<{
-  className?: string;
-  ref?: Ref<HTMLElement>;
-  "aria-label"?: string;
-}>;
-
-type SpinnerProps = {
-  size?: SpinnerSize;
-};
-
-function Spinner({ size = "md" }: SpinnerProps) {
-  return (
-    <span aria-hidden="true" className={spinnerStyles({ size })} role="presentation" />
-  );
-}
-
-function warnIconOnlyWithoutLabel(iconOnly: boolean, ariaLabel?: string) {
-  if (iconOnly && !ariaLabel && process.env.NODE_ENV !== "production") {
-    console.warn(
-      "[@ve/ui Button] iconOnly 사용 시 스크린 리더를 위해 aria-label을 제공하세요."
-    );
-  }
-}
-
-function getLoadingAnnouncement(loadingText: string | undefined, children: ReactNode) {
-  if (typeof loadingText === "string" && loadingText.length > 0) {
-    return loadingText;
-  }
-
-  if (typeof children === "string" && children.length > 0) {
-    return `${children} 처리 중`;
-  }
-
-  return "처리 중";
+function preventInteractionWhenDisabled(isDisabled: boolean) {
+  return {
+    onClick: (event: MouseEvent<HTMLElement>) => {
+      if (!isDisabled) return;
+      event.preventDefault();
+      event.stopPropagation();
+    },
+    onKeyDown: (event: KeyboardEvent<HTMLElement>) => {
+      if (!isDisabled) return;
+      if (event.key !== "Enter" && event.key !== " ") return;
+      event.preventDefault();
+      event.stopPropagation();
+    }
+  };
 }
 
 export function Button({
@@ -115,26 +53,14 @@ export function Button({
   style,
   ...props
 }: ButtonProps) {
-  const innerRef = useRef<HTMLElement | null>(null);
-  const [lockedWidth, setLockedWidth] = useState<number | undefined>(undefined);
   const resolvedSize: ButtonSize = iconOnly ? "icon" : (size ?? "md");
   const isDisabled = Boolean(disabled || loading);
-  const spinnerSize = SPINNER_SIZE_BY_BUTTON[resolvedSize];
   const iconSlotSize = resolvedSize;
+  const loadingAnnouncement = getLoadingAnnouncement(loadingText, children);
 
   warnIconOnlyWithoutLabel(iconOnly, ariaLabel);
 
-  useLayoutEffect(() => {
-    if (!loading) {
-      setLockedWidth(undefined);
-      return;
-    }
-
-    const node = innerRef.current;
-    if (!node || lockedWidth !== undefined) return;
-
-    setLockedWidth(node.offsetWidth);
-  }, [loading, lockedWidth]);
+  const { ref: widthLockRef, style: lockedStyle } = useLoadingWidthLock({ loading, style });
 
   const classes = cn(
     buttonStyles({
@@ -146,54 +72,22 @@ export function Button({
     className
   );
 
-  const sharedProps = {
-    ...props,
-    ref: mergeRefs(ref, innerRef),
-    className: classes,
-    style: lockedWidth ? { minWidth: lockedWidth, ...(style ?? {}) } : style,
-    "aria-busy": loading || undefined,
-    "aria-disabled": isDisabled || undefined,
-    "aria-pressed": pressed ?? undefined,
+  const dataProps = {
+    "data-slot": "button",
+    "data-variant": variant,
+    "data-size": resolvedSize,
     "data-loading": loading ? "true" : undefined,
     "data-icon-only": iconOnly ? "true" : undefined,
     "data-pressed": pressed ? "true" : undefined
   };
 
-  const content = (
-    <>
-      {loading ? (
-        <>
-          <span className={buttonSpinnerOverlay}>
-            <Spinner size={spinnerSize} />
-          </span>
-          <VisuallyHidden aria-live="polite">
-            {getLoadingAnnouncement(loadingText, children)}
-          </VisuallyHidden>
-        </>
-      ) : null}
-      {!loading && leftIcon && !iconOnly ? (
-        <span className={buttonIconSlot({ size: iconSlotSize })}>{leftIcon}</span>
-      ) : null}
-      {!iconOnly ? (
-        <span aria-hidden={loading ? true : undefined} className={buttonLabel}>
-          {children}
-        </span>
-      ) : (
-        <span className={buttonIconSlot({ size: iconSlotSize })}>{children}</span>
-      )}
-      {!loading && rightIcon && !iconOnly ? (
-        <span className={buttonIconSlot({ size: iconSlotSize })}>{rightIcon}</span>
-      ) : null}
-    </>
-  );
+  const ariaProps = {
+    "aria-busy": loading || undefined,
+    "aria-disabled": isDisabled || undefined,
+    "aria-pressed": pressed ?? undefined
+  };
 
   if (asChild) {
-    if (loading || leftIcon || rightIcon || iconOnly || pressed !== undefined) {
-      throw new Error(
-        "[@ve/ui Button] asChild는 loading·icon·iconOnly·pressed와 함께 사용할 수 없습니다."
-      );
-    }
-
     const child = Children.only(children);
 
     if (!isValidElement(child)) {
@@ -201,31 +95,61 @@ export function Button({
     }
 
     const childElement = child as AsChildElement;
+    const disabledGuards = preventInteractionWhenDisabled(isDisabled);
 
     return cloneElement(childElement, {
       ...childElement.props,
-      ...sharedProps,
-      ref: mergeRefs(ref, innerRef, childElement.props.ref),
+      ...props,
+      ...dataProps,
+      ...ariaProps,
+      ref: mergeRefs(ref, widthLockRef, childElement.props.ref),
       className: cn(classes, childElement.props.className),
+      style: lockedStyle,
       "aria-label": ariaLabel ?? childElement.props["aria-label"],
+      onClick: isDisabled
+        ? disabledGuards.onClick
+        : mergeHandlers(childElement.props.onClick, props.onClick),
+      onKeyDown: isDisabled
+        ? disabledGuards.onKeyDown
+        : mergeHandlers(childElement.props.onKeyDown, props.onKeyDown),
       ...(isDisabled ? { tabIndex: -1 } : {})
     });
   }
 
-  const accessibleLabel = loading
-    ? getLoadingAnnouncement(loadingText, children)
-    : ariaLabel;
+  const accessibleLabel = loading ? loadingAnnouncement : ariaLabel;
 
   return (
     <button
-      {...sharedProps}
+      {...props}
+      {...dataProps}
+      {...ariaProps}
+      ref={mergeRefs(ref, widthLockRef)}
       aria-label={accessibleLabel}
+      className={classes}
       disabled={isDisabled}
+      style={lockedStyle}
       type={type}
     >
-      {content}
+      <ButtonContent
+        iconOnly={iconOnly}
+        iconSlotSize={iconSlotSize}
+        leftIcon={leftIcon}
+        loading={loading}
+        loadingAnnouncement={loadingAnnouncement}
+        rightIcon={rightIcon}
+      >
+        {children}
+      </ButtonContent>
     </button>
   );
 }
 
-export { BUTTON_VARIANTS };
+export { BUTTON_VARIANTS } from "./button.types";
+export type {
+  ButtonAsChildProps,
+  ButtonDefaultProps,
+  ButtonIconOnlyProps,
+  ButtonProps,
+  ButtonVariant,
+  ButtonVariantOption
+} from "./button.types";

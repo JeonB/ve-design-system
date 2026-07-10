@@ -239,3 +239,22 @@ export const FormSubmit: Story = {
     </form>
   )
 };
+
+export const AsyncSubmit: Story = {
+  render: function AsyncSubmitStory() {
+    const [loading, setLoading] = useState(false);
+
+    return (
+      <Button
+        loading={loading}
+        loadingText="Saving…"
+        onClick={() => {
+          setLoading(true);
+          window.setTimeout(() => setLoading(false), 1500);
+        }}
+      >
+        Save draft
+      </Button>
+    );
+  }
+};
