@@ -10,6 +10,10 @@ type UseLoadingWidthLockResult = {
   style?: CSSProperties;
 };
 
+/**
+ * 로딩 시작 시점의 offsetWidth를 minWidth로 고정해
+ * 스피너 표시로 인한 버튼 너비 변화(레이아웃 시프트)를 방지한다.
+ */
 export function useLoadingWidthLock({
   loading,
   style

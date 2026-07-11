@@ -16,6 +16,13 @@ export type ButtonGroupProps = HTMLAttributes<HTMLDivElement> & {
   children: ReactNode;
 };
 
+/**
+ * 여러 Button을 그룹으로 배치한다.
+ *
+ * - `orientation`: 가로/세로 배치
+ * - `attached`: 인접 버튼 border-radius·border 병합
+ * - `gap`: attached가 아닐 때 버튼 간 간격
+ */
 export function ButtonGroup({
   orientation = "horizontal",
   attached = false,
@@ -57,6 +64,7 @@ export function ButtonGroup({
 
 export type ButtonGroupSeparatorProps = HTMLAttributes<HTMLSpanElement>;
 
+/** attached ButtonGroup 내부 버튼 사이 시각적 구분선. */
 export function ButtonGroupSeparator({ className, ...props }: ButtonGroupSeparatorProps) {
   return (
     <span

@@ -26,6 +26,7 @@ type ButtonContentProps = {
   children: ReactNode;
 };
 
+/** loadingText·children 기반으로 스크린 리더용 로딩 안내 문구를 생성한다. */
 export function getLoadingAnnouncement(loadingText: string | undefined, children: ReactNode) {
   if (typeof loadingText === "string" && loadingText.length > 0) {
     return loadingText;
@@ -42,6 +43,10 @@ export function resolveSpinnerSize(size: ButtonSize) {
   return SPINNER_SIZE_BY_BUTTON[size];
 }
 
+/**
+ * 버튼 내부 콘텐츠(스피너·아이콘·레이블)를 렌더한다.
+ * 로딩 중에는 스피너 오버레이와 aria-live 안내를, iconOnly 모드에서는 아이콘 슬롯만 표시한다.
+ */
 export function ButtonContent({
   loading,
   loadingAnnouncement,
@@ -78,6 +83,7 @@ export function ButtonContent({
   );
 }
 
+/** 개발 환경에서 iconOnly + aria-label 누락 시 접근성 경고를 출력한다. */
 export function warnIconOnlyWithoutLabel(iconOnly: boolean, ariaLabel?: string) {
   if (iconOnly && !ariaLabel && process.env.NODE_ENV !== "production") {
     console.warn(

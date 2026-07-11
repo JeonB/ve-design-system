@@ -17,6 +17,7 @@ import {
 } from "./button-content";
 import type { AsChildElement, ButtonProps } from "./button.types";
 
+/** asChild 모드에서 disabled 상태일 때 클릭·키보드(Enter/Space) 상호작용을 차단한다. */
 function preventInteractionWhenDisabled(isDisabled: boolean) {
   return {
     onClick: (event: MouseEvent<HTMLElement>) => {
@@ -33,6 +34,13 @@ function preventInteractionWhenDisabled(isDisabled: boolean) {
   };
 }
 
+/**
+ * 디자인 시스템 버튼.
+ *
+ * - variant/size, loading, icon, fullWidth, pressed 상태 지원
+ * - `asChild`로 `<a>` 등 자식 엘리먼트에 스타일·접근성 속성 위임
+ * - `data-slot`/`data-variant`/`data-size`로 composition·테스트 훅 제공
+ */
 export function Button({
   ref,
   variant,
@@ -88,6 +96,7 @@ export function Button({
   };
 
   if (asChild) {
+    /** 단일 React 엘리먼트에 버튼 스타일·ARIA·이벤트 가드를 주입한다. */
     const child = Children.only(children);
 
     if (!isValidElement(child)) {
