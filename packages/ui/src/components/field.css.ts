@@ -29,6 +29,10 @@ export const fieldLabel = style({
   color: vars.color.foreground
 });
 
+export const fieldRequiredMark = style({
+  color: vars.color.danger
+});
+
 export const fieldDescription = style({
   fontFamily: vars.font.body,
   fontSize: vars.font.size.sm,

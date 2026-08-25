@@ -1,5 +1,7 @@
-import type { InputHTMLAttributes, ReactNode, Ref } from "react";
+import { useRef, type InputHTMLAttributes, type PointerEvent, type ReactNode, type Ref } from "react";
 import { cn } from "../utils/cn";
+import { joinIds } from "../utils/join-ids";
+import { mergeRefs } from "../utils/merge-refs";
 import { useOptionalFieldContext } from "./field";
 import { inputField, inputIcon, inputShell, type InputSize } from "./input.css";
 
@@ -29,13 +31,22 @@ export function Input({
   disabled,
   required,
   className,
+  style,
+  onPointerDown,
   ...props
 }: InputProps) {
   const field = useOptionalFieldContext();
+  const innerRef = useRef<HTMLInputElement>(null);
   const isInvalid = invalid ?? field?.invalid ?? false;
   const isDisabled = Boolean(disabled ?? field?.disabled);
   const isRequired = Boolean(required ?? field?.required);
   const isFullWidth = fullWidth || Boolean(field?.fullWidth);
+
+  function handlePointerDown(event: PointerEvent<HTMLDivElement>) {
+    if (isDisabled) return;
+    if (event.target instanceof HTMLElement && event.target.closest("input")) return;
+    innerRef.current?.focus();
+  }
 
   return (
     <div
@@ -44,24 +55,28 @@ export function Input({
       data-invalid={isInvalid ? "true" : undefined}
       data-size={size}
       data-slot="input"
+      onPointerDown={handlePointerDown}
+      style={style}
     >
       {leftIcon ? (
-        <span aria-hidden="true" className={inputIcon({ size })}>
+        <span aria-hidden="true" className={inputIcon({ size })} data-slot="input-icon">
           {leftIcon}
         </span>
       ) : null}
       <input
         {...props}
-        ref={ref}
-        aria-describedby={props["aria-describedby"] ?? field?.describedBy}
+        ref={mergeRefs(ref, innerRef)}
+        aria-describedby={joinIds(props["aria-describedby"], field?.describedBy)}
         aria-invalid={isInvalid || undefined}
+        aria-required={isRequired || undefined}
         className={inputField}
         disabled={isDisabled}
         id={id ?? field?.controlId}
+        onPointerDown={onPointerDown}
         required={isRequired}
       />
       {rightIcon ? (
-        <span aria-hidden="true" className={inputIcon({ size })}>
+        <span aria-hidden="true" className={inputIcon({ size })} data-slot="input-icon">
           {rightIcon}
         </span>
       ) : null}

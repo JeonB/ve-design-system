@@ -82,7 +82,8 @@ export const vars = createGlobalTheme(":root", {
         sm: "4px 10px",
         md: "8px 12px",
         lg: "10px 14px"
-      }
+      },
+      minWidth: "12rem"
     }
   },
   size: {

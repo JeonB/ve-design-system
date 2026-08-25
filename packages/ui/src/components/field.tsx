@@ -2,8 +2,8 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
   useState,
   type HTMLAttributes,
@@ -11,7 +11,7 @@ import {
   type ReactNode
 } from "react";
 import { cn } from "../utils/cn";
-import { fieldDescription, fieldError, fieldLabel, fieldRoot } from "./field.css";
+import { fieldDescription, fieldError, fieldLabel, fieldRequiredMark, fieldRoot } from "./field.css";
 
 type FieldSlot = "description" | "error";
 
@@ -24,7 +24,7 @@ type FieldContextValue = {
   disabled: boolean;
   fullWidth: boolean;
   describedBy: string | undefined;
-  setSlotPresent: (slot: FieldSlot, present: boolean) => void;
+  setSlotId: (slot: FieldSlot, id: string | undefined) => void;
 };
 
 const FieldContext = createContext<FieldContextValue | null>(null);
@@ -64,15 +64,19 @@ function FieldRoot({
   const controlId = `${id}-control`;
   const descriptionId = `${id}-description`;
   const errorId = `${id}-error`;
-  const [slots, setSlots] = useState({ description: false, error: false });
+  const [slots, setSlots] = useState<{ description?: string; error?: string }>({});
 
-  const setSlotPresent = useCallback((slot: FieldSlot, present: boolean) => {
-    setSlots((current) => (current[slot] === present ? current : { ...current, [slot]: present }));
+  const setSlotId = useCallback((slot: FieldSlot, slotId: string | undefined) => {
+    setSlots((current) => {
+      if (current[slot] === slotId) {
+        return current;
+      }
+
+      return { ...current, [slot]: slotId };
+    });
   }, []);
 
-  const describedBy = [slots.description ? descriptionId : undefined, slots.error ? errorId : undefined]
-    .filter((value): value is string => Boolean(value))
-    .join(" ");
+  const describedBy = [slots.description, slots.error].filter((value): value is string => Boolean(value)).join(" ");
 
   const value = useMemo<FieldContextValue>(
     () => ({
@@ -84,9 +88,9 @@ function FieldRoot({
       disabled,
       fullWidth,
       describedBy: describedBy.length > 0 ? describedBy : undefined,
-      setSlotPresent
+      setSlotId
     }),
-    [controlId, descriptionId, errorId, invalid, required, disabled, fullWidth, describedBy, setSlotPresent]
+    [controlId, descriptionId, errorId, invalid, required, disabled, fullWidth, describedBy, setSlotId]
   );
 
   return (
@@ -96,6 +100,7 @@ function FieldRoot({
         className={cn(fieldRoot({ fullWidth }), className)}
         data-disabled={disabled ? "true" : undefined}
         data-invalid={invalid ? "true" : undefined}
+        data-required={required ? "true" : undefined}
         data-slot="field"
       >
         {children}
@@ -106,12 +111,25 @@ function FieldRoot({
 
 export type FieldLabelProps = LabelHTMLAttributes<HTMLLabelElement>;
 
-/** 연결된 Input을 가리키는 레이블. */
-export function FieldLabel({ className, htmlFor, ...props }: FieldLabelProps) {
-  const { controlId } = useFieldContext();
+/** 연결된 Input을 가리키는 레이블. required일 때 시각적 표시를 붙인다. */
+export function FieldLabel({ className, htmlFor, children, ...props }: FieldLabelProps) {
+  const { controlId, required } = useFieldContext();
 
   return (
-    <label {...props} className={cn(fieldLabel, className)} data-slot="field-label" htmlFor={htmlFor ?? controlId} />
+    <label
+      {...props}
+      className={cn(fieldLabel, className)}
+      data-required={required ? "true" : undefined}
+      data-slot="field-label"
+      htmlFor={htmlFor ?? controlId}
+    >
+      {children}
+      {required ? (
+        <span aria-hidden="true" className={fieldRequiredMark}>
+          {" *"}
+        </span>
+      ) : null}
+    </label>
   );
 }
 
@@ -119,41 +137,38 @@ export type FieldDescriptionProps = HTMLAttributes<HTMLParagraphElement>;
 
 /** 컨트롤 보조 설명. Input의 aria-describedby에 포함된다. */
 export function FieldDescription({ className, id, ...props }: FieldDescriptionProps) {
-  const { descriptionId, setSlotPresent } = useFieldContext();
+  const { descriptionId, setSlotId } = useFieldContext();
+  const resolvedId = id ?? descriptionId;
 
-  useEffect(() => {
-    setSlotPresent("description", true);
-    return () => setSlotPresent("description", false);
-  }, [setSlotPresent]);
+  useLayoutEffect(() => {
+    setSlotId("description", resolvedId);
+    return () => setSlotId("description", undefined);
+  }, [resolvedId, setSlotId]);
 
   return (
-    <p
-      {...props}
-      className={cn(fieldDescription, className)}
-      data-slot="field-description"
-      id={id ?? descriptionId}
-    />
+    <p {...props} className={cn(fieldDescription, className)} data-slot="field-description" id={resolvedId} />
   );
 }
 
 export type FieldErrorProps = HTMLAttributes<HTMLParagraphElement>;
 
-/** 검증 실패 메시지. role="alert"로 스크린 리더에 알린다. */
+/** 검증 실패 메시지. Field가 invalid일 때 role="alert"로 알린다. */
 export function FieldError({ className, id, ...props }: FieldErrorProps) {
-  const { errorId, setSlotPresent } = useFieldContext();
+  const { errorId, invalid, setSlotId } = useFieldContext();
+  const resolvedId = id ?? errorId;
 
-  useEffect(() => {
-    setSlotPresent("error", true);
-    return () => setSlotPresent("error", false);
-  }, [setSlotPresent]);
+  useLayoutEffect(() => {
+    setSlotId("error", resolvedId);
+    return () => setSlotId("error", undefined);
+  }, [resolvedId, setSlotId]);
 
   return (
     <p
       {...props}
       className={cn(fieldError, className)}
       data-slot="field-error"
-      id={id ?? errorId}
-      role="alert"
+      id={resolvedId}
+      role={invalid ? "alert" : undefined}
     />
   );
 }

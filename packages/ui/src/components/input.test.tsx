@@ -72,6 +72,47 @@ describe("Field", () => {
     expect(error).toHaveTextContent("Enter a valid email.");
   });
 
+  it("사용자 aria-describedby와 커스텀 설명 id를 병합한다", () => {
+    render(
+      <Field>
+        <Field.Label>Email</Field.Label>
+        <Input aria-describedby="extra-hint" name="email" />
+        <Field.Description id="email-hint">Work email only.</Field.Description>
+      </Field>
+    );
+
+    const input = screen.getByRole("textbox", { name: "Email" });
+    const describedBy = input.getAttribute("aria-describedby");
+
+    expect(describedBy).toContain("extra-hint");
+    expect(describedBy).toContain("email-hint");
+  });
+
+  it("required 레이블에 시각적 표시를 붙인다", () => {
+    render(
+      <Field required>
+        <Field.Label>Email</Field.Label>
+        <Input name="email" />
+      </Field>
+    );
+
+    expect(screen.getByText("*")).toBeInTheDocument();
+    expect(screen.getByRole("textbox", { name: "Email" })).toBeRequired();
+  });
+
+  it("invalid가 아니면 오류 메시지를 alert로 알리지 않는다", () => {
+    render(
+      <Field>
+        <Field.Label>Email</Field.Label>
+        <Input name="email" />
+        <Field.Error>Enter a valid email.</Field.Error>
+      </Field>
+    );
+
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument();
+    expect(screen.getByText("Enter a valid email.")).toBeInTheDocument();
+  });
+
   it("Field disabled를 Input에 전달한다", () => {
     render(
       <Field disabled>

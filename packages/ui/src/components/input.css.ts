@@ -8,6 +8,7 @@ export const inputShell = recipe({
     alignItems: "center",
     gap: vars.space.x2,
     boxSizing: "border-box",
+    minWidth: vars.component.input.minWidth,
     border: `${vars.size.border.hairline} solid ${vars.color.border}`,
     borderRadius: vars.radius.sm,
     background: vars.color.background,
@@ -15,6 +16,7 @@ export const inputShell = recipe({
     fontFamily: vars.font.body,
     fontWeight: vars.font.weight.regular,
     lineHeight: vars.font.lineHeight.normal,
+    cursor: "text",
     transition: vars.motion.transition.input,
     selectors: {
       "&:focus-within": {
@@ -58,7 +60,7 @@ export const inputShell = recipe({
       }
     },
     fullWidth: {
-      true: { width: vars.layout.full },
+      true: { width: vars.layout.full, minWidth: vars.space.x0 },
       false: {}
     }
   },
@@ -69,6 +71,7 @@ export const inputShell = recipe({
 });
 
 export const inputField = style({
+  flex: 1,
   width: vars.layout.full,
   minWidth: vars.space.x0,
   border: vars.space.x0,
