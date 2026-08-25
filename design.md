@@ -11,10 +11,11 @@
 
 - `Button` component with `variant` (`solid`, `secondary`, `outline`, `ghost`, `danger`, `dangerOutline`, `link`), `size` (`sm`, `md`, `lg`, `icon`), loading/icons/fullWidth/asChild/pressed.
 - `ButtonGroup` for dialog footers and attached toolbars.
+- `Field` + `Input` compound form pattern: label/description/error wiring, sizes, invalid/disabled, icon slots.
 - Storybook as visual contract for component behavior.
 
 ## Next Steps
 
 - Add color modes (`light` and `dark`) with `createThemeContract` + `createTheme`.
 - Token categories: `color`, `space`, `radius`, `font`, `component.*`, `motion`, `focus`, `shadow` — see Storybook `Foundations/Tokens`.
-- Add `Input` and `Card` using the same recipe pattern.
+- Add `Card` using the same recipe pattern.

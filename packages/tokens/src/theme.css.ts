@@ -46,10 +46,12 @@ export const vars = createGlobalTheme(":root", {
       lg: "16px"
     },
     weight: {
+      regular: "400",
       semibold: "600"
     },
     lineHeight: {
-      tight: "1"
+      tight: "1",
+      normal: "1.4"
     },
     decoration: {
       underlineOffset: "3px"
@@ -68,6 +70,18 @@ export const vars = createGlobalTheme(":root", {
         md: "8px 16px",
         lg: "12px 24px",
         icon: "8px"
+      }
+    },
+    input: {
+      height: {
+        sm: "32px",
+        md: "40px",
+        lg: "48px"
+      },
+      padding: {
+        sm: "4px 10px",
+        md: "8px 12px",
+        lg: "10px 14px"
       }
     }
   },
@@ -95,7 +109,8 @@ export const vars = createGlobalTheme(":root", {
     },
     transition: {
       button:
-        "background 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease, transform 80ms ease"
+        "background 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease, transform 80ms ease",
+      input: "background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease"
     }
   },
   effect: {

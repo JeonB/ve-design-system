@@ -10,6 +10,10 @@ export type {
 export { ButtonGroup, ButtonGroupSeparator } from "./components/button-group";
 export type { ButtonGroupProps, ButtonGroupSeparatorProps } from "./components/button-group";
 export { VisuallyHidden } from "./components/visually-hidden";
+export { Field, FieldDescription, FieldError, FieldLabel } from "./components/field";
+export type { FieldDescriptionProps, FieldErrorProps, FieldLabelProps, FieldProps } from "./components/field";
+export { Input } from "./components/input";
+export type { InputProps, InputSize } from "./components/input";
 export type {
   ButtonSize,
   ButtonStyleVariants,
