@@ -136,13 +136,10 @@ pnpm build    # 소비 앱/IDE 타입 해석을 위해 필수
 **토큰 (`@ve/tokens`)**
 
 ```ts
-// packages/tokens/src/theme.css.ts
-export const vars = createGlobalTheme(":root", {
-  color: { /* 기존 --color-* 매핑 */ },
-  space: { /* 4px 그리드 등 */ },
-  radius: { /* ... */ },
-  font: { /* ... */ }
-});
+// packages/tokens/src — color contract + static :root tokens
+// color-theme.css.ts: createThemeContract + light(:root) / darkTheme(class)
+// static.css.ts: space, radius, font, component, …
+import { vars, lightTheme, darkTheme } from "@ve/tokens";
 ```
 
 **컴포넌트 패턴 (`@ve/ui`)**
