@@ -14,8 +14,8 @@ export { Field, FieldDescription, FieldError, FieldLabel } from "./components/fi
 export type { FieldDescriptionProps, FieldErrorProps, FieldLabelProps, FieldProps } from "./components/field";
 export { Input } from "./components/input";
 export type { InputProps, InputSize } from "./components/input";
-export { ThemeProvider, useTheme } from "./theme";
-export type { ThemeProviderProps, ResolvedTheme, ThemeMode } from "./theme";
+export { ThemeProvider, ThemeToggle, useTheme } from "./theme";
+export type { ThemeProviderProps, ThemeToggleProps, ResolvedTheme, ThemeMode } from "./theme";
 export type {
   ButtonSize,
   ButtonStyleVariants,

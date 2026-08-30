@@ -1,12 +1,13 @@
 import type { Meta, StoryObj } from "@storybook/react";
 import type { CSSProperties } from "react";
 import { vars } from "@ve/tokens";
+import { ThemeToggle, useTheme } from "@ve/ui";
 
 const swatchStyle: CSSProperties = {
   width: "48px",
   height: "48px",
   borderRadius: "8px",
-  border: "1px solid #e5e7eb"
+  border: `1px solid ${vars.color.border}`
 };
 
 const sectionStyle: CSSProperties = {
@@ -23,7 +24,7 @@ const gridStyle: CSSProperties = {
 
 const labelStyle: CSSProperties = {
   fontSize: "12px",
-  color: "#64748b",
+  color: vars.color.mutedForeground,
   fontFamily: "ui-monospace, monospace"
 };
 
@@ -38,13 +39,42 @@ export default meta;
 
 type Story = StoryObj<typeof meta>;
 
+function ThemeStatus() {
+  const { mode, resolvedTheme } = useTheme();
+
+  return (
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        gap: "12px",
+        marginBottom: "24px",
+        padding: "12px 16px",
+        border: `1px solid ${vars.color.border}`,
+        borderRadius: vars.radius.md,
+        background: vars.color.muted
+      }}
+    >
+      <div style={{ display: "grid", gap: "4px" }}>
+        <strong style={{ color: vars.color.foreground }}>Color mode</strong>
+        <code style={labelStyle}>
+          mode={mode} · resolved={resolvedTheme}
+        </code>
+      </div>
+      <ThemeToggle />
+    </div>
+  );
+}
+
 export const Colors: Story = {
   render: () => {
     const entries = Object.entries(vars.color);
 
     return (
       <section style={sectionStyle}>
-        <h2 style={{ margin: 0, fontSize: "18px" }}>Color</h2>
+        <ThemeStatus />
+        <h2 style={{ margin: 0, fontSize: "18px", color: vars.color.foreground }}>Color</h2>
         <div style={gridStyle}>
           {entries.map(([name, value]) => (
             <div key={name} style={{ display: "grid", gap: "6px" }}>
