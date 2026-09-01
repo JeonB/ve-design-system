@@ -12,10 +12,12 @@
 - `Button` component with `variant` (`solid`, `secondary`, `outline`, `ghost`, `danger`, `dangerOutline`, `link`), `size` (`sm`, `md`, `lg`, `icon`), loading/icons/fullWidth/asChild/pressed.
 - `ButtonGroup` for dialog footers and attached toolbars.
 - `Field` + `Input` compound form pattern: label/description/error wiring, sizes, invalid/disabled, icon slots.
-- Storybook as visual contract for component behavior.
+- Color modes (`light` / `dark` / `system`) via `createThemeContract` + `ThemeProvider`.
+- `Card` compound surface that consumes theme color/shadow tokens.
+- Storybook as visual contract for component behavior (toolbar theme switch).
 
 ## Next Steps
 
-- Add color modes (`light` and `dark`) with `createThemeContract` + `createTheme`.
-- Token categories: `color`, `space`, `radius`, `font`, `component.*`, `motion`, `focus`, `shadow` — see Storybook `Foundations/Tokens`.
-- Add `Card` using the same recipe pattern.
+- Optional brand themes / `assignInlineVars` dynamic palettes.
+- SSR FOUC prevention helpers for Next.js apps.
+- Token categories already covered: `color`, `space`, `radius`, `font`, `component.*`, `motion`, `focus`, `shadow` — see Storybook `Foundations/Tokens`.

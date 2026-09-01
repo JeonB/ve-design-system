@@ -241,3 +241,15 @@ export { ThemeProvider, useTheme, ThemeToggle, Card };
 - [x] 기존 컴포넌트 하드코딩 색상 없이 토큰만 사용
 - [x] PHASE별 일자 커밋 계획 (8/26–9/1)
 - [x] Card로 테마 소비 검증
+
+## 12. 구현 완료 기록
+
+| PHASE | 날짜 | 커밋 요지 |
+|-------|------|-----------|
+| 0 | 2026-08-26 | 설계서 `docs/color-modes.md` |
+| 1 | 2026-08-27 | color contract + light/dark themes |
+| 2 | 2026-08-28 | ThemeProvider / useTheme |
+| 3 | 2026-08-29 | 마이그레이션 정리·회귀 테스트 |
+| 4 | 2026-08-30 | Storybook toolbar + ThemeToggle |
+| 5 | 2026-08-31 | Card compound |
+| 6 | 2026-09-01 | docs/README 반영·통합 검증 |

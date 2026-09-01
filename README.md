@@ -17,9 +17,35 @@ pnpm --filter storybook dev
 
 ## Workspace
 
-- `packages/tokens`: theme tokens (`@vanilla-extract/css`)
-- `packages/ui`: React UI primitives + recipes
-- `apps/storybook`: component preview and documentation
+- `packages/tokens`: theme tokens (`@vanilla-extract/css`) — static + color contract (light/dark)
+- `packages/ui`: React UI primitives + recipes (`ThemeProvider`, `Button`, `Field`, `Input`, `Card`)
+- `apps/storybook`: component preview and documentation (toolbar theme switch)
+
+## Color modes
+
+앱 루트를 `ThemeProvider`로 감싸면 light / dark / system 전환이 가능합니다.
+
+```tsx
+import { ThemeProvider, ThemeToggle, Card, Button } from "@ve/ui";
+
+export function App() {
+  return (
+    <ThemeProvider defaultMode="system">
+      <ThemeToggle />
+      <Card>
+        <Card.Header>
+          <Card.Title>Hello</Card.Title>
+        </Card.Header>
+        <Card.Body>
+          <Button>Save</Button>
+        </Card.Body>
+      </Card>
+    </ThemeProvider>
+  );
+}
+```
+
+설계 상세: [`docs/color-modes.md`](docs/color-modes.md)
 
 ## Quality Gates
 
