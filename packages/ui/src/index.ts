@@ -32,8 +32,15 @@ export type {
   CardTitleProps,
   CardVariant
 } from "./components/card";
-export { ThemeProvider, ThemeToggle, useTheme } from "./theme";
-export type { ThemeProviderProps, ThemeToggleProps, ResolvedTheme, ThemeMode } from "./theme";
+export { ThemeProvider, ThemeScript, ThemeToggle, getThemeInitScript, useTheme } from "./theme";
+export type {
+  ThemeProviderProps,
+  ThemeScriptOptions,
+  ThemeScriptProps,
+  ThemeToggleProps,
+  ResolvedTheme,
+  ThemeMode
+} from "./theme";
 export type {
   ButtonSize,
   ButtonStyleVariants,
