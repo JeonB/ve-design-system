@@ -14,6 +14,8 @@ export { Field, FieldDescription, FieldError, FieldLabel } from "./components/fi
 export type { FieldDescriptionProps, FieldErrorProps, FieldLabelProps, FieldProps } from "./components/field";
 export { Input } from "./components/input";
 export type { InputProps, InputSize } from "./components/input";
+export { Textarea } from "./components/textarea";
+export type { TextareaProps, TextareaResize, TextareaSize } from "./components/textarea";
 export {
   Card,
   CardBody,

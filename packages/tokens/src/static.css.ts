@@ -63,6 +63,13 @@ export const staticVars = createGlobalTheme(":root", {
         lg: "10px 14px"
       },
       minWidth: "12rem"
+    },
+    textarea: {
+      minHeight: {
+        sm: "72px",
+        md: "96px",
+        lg: "128px"
+      }
     }
   },
   size: {
