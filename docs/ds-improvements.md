@@ -189,8 +189,18 @@ export type { BadgeProps, BadgeVariant, BadgeSize };
 
 ## 8. 체크리스트
 
-- [ ] ThemeScript FOUC 방지
-- [ ] Textarea + Field
-- [ ] Badge + semantic 토큰
-- [ ] 9/2–9/6 일자별 커밋
-- [ ] docs 반영
+- [x] ThemeScript FOUC 방지
+- [x] Textarea + Field
+- [x] Badge + semantic 토큰
+- [x] 9/2–9/6 일자별 커밋
+- [x] docs 반영
+
+## 9. 구현 완료 기록
+
+| PHASE | 날짜 | 커밋 요지 |
+|-------|------|-----------|
+| 0 | 2026-09-02 | 설계서 `docs/ds-improvements.md` |
+| 1 | 2026-09-03 | ThemeScript / getThemeInitScript |
+| 2 | 2026-09-04 | Textarea + Field |
+| 3 | 2026-09-05 | success/warning 토큰 + Badge |
+| 4 | 2026-09-06 | design.md / README 반영·통합 검증 |

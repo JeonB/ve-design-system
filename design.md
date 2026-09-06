@@ -11,13 +11,14 @@
 
 - `Button` component with `variant` (`solid`, `secondary`, `outline`, `ghost`, `danger`, `dangerOutline`, `link`), `size` (`sm`, `md`, `lg`, `icon`), loading/icons/fullWidth/asChild/pressed.
 - `ButtonGroup` for dialog footers and attached toolbars.
-- `Field` + `Input` compound form pattern: label/description/error wiring, sizes, invalid/disabled, icon slots.
-- Color modes (`light` / `dark` / `system`) via `createThemeContract` + `ThemeProvider`.
+- `Field` + `Input` / `Textarea` compound form pattern: label/description/error wiring, sizes, invalid/disabled, icon slots (Input).
+- Color modes (`light` / `dark` / `system`) via `createThemeContract` + `ThemeProvider` + `ThemeScript` (FOUC).
 - `Card` compound surface that consumes theme color/shadow tokens.
+- `Badge` with semantic variants (`neutral`, `primary`, `success`, `warning`, `danger`, `outline`).
 - Storybook as visual contract for component behavior (toolbar theme switch).
 
 ## Next Steps
 
 - Optional brand themes / `assignInlineVars` dynamic palettes.
-- SSR FOUC prevention helpers for Next.js apps.
-- Token categories already covered: `color`, `space`, `radius`, `font`, `component.*`, `motion`, `focus`, `shadow` — see Storybook `Foundations/Tokens`.
+- Select / Checkbox / Dialog primitives.
+- Visual regression (Chromatic) optional CI.

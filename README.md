@@ -17,35 +17,47 @@ pnpm --filter storybook dev
 
 ## Workspace
 
-- `packages/tokens`: theme tokens (`@vanilla-extract/css`) — static + color contract (light/dark)
-- `packages/ui`: React UI primitives + recipes (`ThemeProvider`, `Button`, `Field`, `Input`, `Card`)
+- `packages/tokens`: theme tokens (`@vanilla-extract/css`) — static + color contract (light/dark, success/warning)
+- `packages/ui`: React UI primitives + recipes (`ThemeProvider`, `ThemeScript`, `Button`, `Field`, `Input`, `Textarea`, `Card`, `Badge`)
 - `apps/storybook`: component preview and documentation (toolbar theme switch)
 
 ## Color modes
 
-앱 루트를 `ThemeProvider`로 감싸면 light / dark / system 전환이 가능합니다.
+앱 루트를 `ThemeProvider`로 감싸면 light / dark / system 전환이 가능합니다.  
+SSR/첫 페인트 깜빡임(FOUC)을 막으려면 `<head>`에 `ThemeScript`를 함께 둡니다.
 
 ```tsx
-import { ThemeProvider, ThemeToggle, Card, Button } from "@ve/ui";
+import { ThemeProvider, ThemeScript, ThemeToggle, Card, Button, Badge, Textarea, Field } from "@ve/ui";
 
 export function App() {
   return (
-    <ThemeProvider defaultMode="system">
-      <ThemeToggle />
-      <Card>
-        <Card.Header>
-          <Card.Title>Hello</Card.Title>
-        </Card.Header>
-        <Card.Body>
-          <Button>Save</Button>
-        </Card.Body>
-      </Card>
-    </ThemeProvider>
+    <>
+      <ThemeScript defaultMode="system" />
+      <ThemeProvider defaultMode="system">
+        <ThemeToggle />
+        <Card>
+          <Card.Header>
+            <Card.Title>Hello</Card.Title>
+            <Badge variant="success" size="sm">Live</Badge>
+          </Card.Header>
+          <Card.Body>
+            <Field>
+              <Field.Label>Notes</Field.Label>
+              <Textarea name="notes" />
+            </Field>
+            <Button>Save</Button>
+          </Card.Body>
+        </Card>
+      </ThemeProvider>
+    </>
   );
 }
 ```
 
-설계 상세: [`docs/color-modes.md`](docs/color-modes.md)
+설계 상세:
+
+- [`docs/color-modes.md`](docs/color-modes.md) — light/dark 토큰·Provider
+- [`docs/ds-improvements.md`](docs/ds-improvements.md) — ThemeScript / Textarea / Badge
 
 ## Quality Gates
 
