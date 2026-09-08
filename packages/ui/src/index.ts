@@ -18,6 +18,8 @@ export { Textarea } from "./components/textarea";
 export type { TextareaProps, TextareaResize, TextareaSize } from "./components/textarea";
 export { Badge, BADGE_VARIANTS } from "./components/badge";
 export type { BadgeProps, BadgeSize, BadgeVariant } from "./components/badge";
+export { Checkbox } from "./components/checkbox";
+export type { CheckboxProps, CheckboxSize } from "./components/checkbox";
 export {
   Card,
   CardBody,

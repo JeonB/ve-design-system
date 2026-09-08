@@ -70,6 +70,22 @@ export const staticVars = createGlobalTheme(":root", {
         md: "96px",
         lg: "128px"
       }
+    },
+    checkbox: {
+      size: {
+        sm: "16px",
+        md: "18px"
+      }
+    },
+    switch: {
+      width: {
+        sm: "32px",
+        md: "40px"
+      },
+      height: {
+        sm: "18px",
+        md: "22px"
+      }
     }
   },
   size: {
