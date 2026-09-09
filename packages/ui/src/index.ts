@@ -20,6 +20,8 @@ export { Badge, BADGE_VARIANTS } from "./components/badge";
 export type { BadgeProps, BadgeSize, BadgeVariant } from "./components/badge";
 export { Checkbox } from "./components/checkbox";
 export type { CheckboxProps, CheckboxSize } from "./components/checkbox";
+export { Switch } from "./components/switch";
+export type { SwitchProps, SwitchSize } from "./components/switch";
 export {
   Card,
   CardBody,
