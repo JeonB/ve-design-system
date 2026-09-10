@@ -22,6 +22,8 @@ export { Checkbox } from "./components/checkbox";
 export type { CheckboxProps, CheckboxSize } from "./components/checkbox";
 export { Switch } from "./components/switch";
 export type { SwitchProps, SwitchSize } from "./components/switch";
+export { Select } from "./components/select";
+export type { SelectProps, SelectSize } from "./components/select";
 export {
   Card,
   CardBody,
