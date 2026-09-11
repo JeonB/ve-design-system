@@ -113,7 +113,8 @@ export const staticVars = createGlobalTheme(":root", {
     transition: {
       button:
         "background 120ms ease, color 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease, transform 80ms ease",
-      input: "background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease"
+      input: "background 120ms ease, border-color 120ms ease, box-shadow 120ms ease, opacity 120ms ease",
+      overlay: "opacity 120ms ease, transform 120ms ease"
     }
   },
   effect: {
@@ -133,7 +134,9 @@ export const staticVars = createGlobalTheme(":root", {
     ringOffset: "2px"
   },
   zIndex: {
-    focus: "1"
+    focus: "1",
+    overlay: "1000",
+    dialog: "1001"
   },
   layout: {
     full: "100%"

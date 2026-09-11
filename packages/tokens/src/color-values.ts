@@ -24,10 +24,12 @@ export const lightColorTokens = {
     mutedForeground: "#6b7280",
     border: "#e5e7eb",
     ring: "#2563eb",
-    ghostHover: "rgba(17, 24, 39, 0.06)"
+    ghostHover: "rgba(17, 24, 39, 0.06)",
+    overlay: "rgba(15, 23, 42, 0.45)"
   },
   shadow: {
     sm: "0 1px 2px rgba(15, 23, 42, 0.06)",
+    md: "0 10px 30px rgba(15, 23, 42, 0.18)",
     none: "none"
   }
 } as const;
@@ -57,10 +59,12 @@ export const darkColorTokens = {
     mutedForeground: "#9ca3af",
     border: "#374151",
     ring: "#60a5fa",
-    ghostHover: "rgba(255, 255, 255, 0.08)"
+    ghostHover: "rgba(255, 255, 255, 0.08)",
+    overlay: "rgba(0, 0, 0, 0.6)"
   },
   shadow: {
     sm: "0 1px 2px rgba(0, 0, 0, 0.45)",
+    md: "0 12px 32px rgba(0, 0, 0, 0.55)",
     none: "none"
   }
 } as const;

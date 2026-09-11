@@ -25,6 +25,24 @@ export type { SwitchProps, SwitchSize } from "./components/switch";
 export { Select } from "./components/select";
 export type { SelectProps, SelectSize } from "./components/select";
 export {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle
+} from "./components/dialog";
+export type {
+  DialogCloseProps,
+  DialogContentProps,
+  DialogDescriptionProps,
+  DialogFooterProps,
+  DialogHeaderProps,
+  DialogProps,
+  DialogTitleProps
+} from "./components/dialog";
+export {
   Card,
   CardBody,
   CardDescription,

@@ -27,10 +27,12 @@ export const colorContract = createThemeContract({
     mutedForeground: null,
     border: null,
     ring: null,
-    ghostHover: null
+    ghostHover: null,
+    overlay: null
   },
   shadow: {
     sm: null,
+    md: null,
     none: null
   }
 });
