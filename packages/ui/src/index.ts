@@ -42,6 +42,7 @@ export type {
   DialogProps,
   DialogTitleProps
 } from "./components/dialog";
+export { useFocusTrap } from "./hooks/use-focus-trap";
 export {
   Card,
   CardBody,

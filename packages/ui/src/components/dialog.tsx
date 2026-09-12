@@ -29,6 +29,8 @@ type DialogContextValue = {
   setOpen: (open: boolean) => void;
   titleId: string;
   descriptionId: string;
+  descriptionPresent: boolean;
+  setDescriptionPresent: (present: boolean) => void;
   contentRef: React.RefObject<HTMLDivElement | null>;
 };
 
@@ -55,6 +57,7 @@ function DialogRoot({ open, defaultOpen = false, onOpenChange, children }: Dialo
   const resolvedOpen = isControlled ? Boolean(open) : uncontrolledOpen;
   const contentRef = useRef<HTMLDivElement | null>(null);
   const id = useId();
+  const [descriptionPresent, setDescriptionPresent] = useState(false);
 
   const setOpen = useCallback(
     (next: boolean) => {
@@ -70,9 +73,11 @@ function DialogRoot({ open, defaultOpen = false, onOpenChange, children }: Dialo
       setOpen,
       titleId: `${id}-title`,
       descriptionId: `${id}-description`,
+      descriptionPresent,
+      setDescriptionPresent,
       contentRef
     }),
-    [resolvedOpen, setOpen, id]
+    [resolvedOpen, setOpen, id, descriptionPresent]
   );
 
   return <DialogContext.Provider value={value}>{children}</DialogContext.Provider>;
@@ -92,7 +97,7 @@ export function DialogContent({
   closeOnEscape = true,
   ...props
 }: DialogContentProps) {
-  const { open, setOpen, titleId, descriptionId, contentRef } = useDialogContext();
+  const { open, setOpen, titleId, descriptionId, descriptionPresent, contentRef } = useDialogContext();
   useFocusTrap(open, contentRef);
 
   useEffect(() => {
@@ -134,7 +139,7 @@ export function DialogContent({
       <div
         {...props}
         ref={contentRef}
-        aria-describedby={descriptionId}
+        aria-describedby={descriptionPresent ? descriptionId : undefined}
         aria-labelledby={titleId}
         aria-modal="true"
         className={cn(dialogContent, className)}
@@ -164,7 +169,13 @@ export function DialogTitle({ className, id, ...props }: DialogTitleProps) {
 
 export type DialogDescriptionProps = HTMLAttributes<HTMLParagraphElement>;
 export function DialogDescription({ className, id, ...props }: DialogDescriptionProps) {
-  const { descriptionId } = useDialogContext();
+  const { descriptionId, setDescriptionPresent } = useDialogContext();
+
+  useEffect(() => {
+    setDescriptionPresent(true);
+    return () => setDescriptionPresent(false);
+  }, [setDescriptionPresent]);
+
   return (
     <p
       {...props}

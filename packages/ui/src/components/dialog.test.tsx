@@ -68,4 +68,18 @@ describe("Dialog", () => {
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
+
+  it("Description이 없으면 aria-describedby를 넣지 않는다", () => {
+    render(
+      <Dialog open>
+        <Dialog.Content>
+          <Dialog.Title>Only title</Dialog.Title>
+        </Dialog.Content>
+      </Dialog>
+    );
+
+    expect(screen.getByRole("dialog", { name: "Only title" })).not.toHaveAttribute(
+      "aria-describedby"
+    );
+  });
 });
