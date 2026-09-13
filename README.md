@@ -17,8 +17,8 @@ pnpm --filter storybook dev
 
 ## Workspace
 
-- `packages/tokens`: theme tokens (`@vanilla-extract/css`) — static + color contract (light/dark, success/warning)
-- `packages/ui`: React UI primitives + recipes (`ThemeProvider`, `ThemeScript`, `Button`, `Field`, `Input`, `Textarea`, `Card`, `Badge`)
+- `packages/tokens`: theme tokens (`@vanilla-extract/css`) — static + color contract (light/dark, success/warning, overlay)
+- `packages/ui`: React UI primitives (`ThemeProvider`, `ThemeScript`, `Button`, `Field`, `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`, `Card`, `Badge`, `Dialog`)
 - `apps/storybook`: component preview and documentation (toolbar theme switch)
 
 ## Color modes
@@ -27,7 +27,20 @@ pnpm --filter storybook dev
 SSR/첫 페인트 깜빡임(FOUC)을 막으려면 `<head>`에 `ThemeScript`를 함께 둡니다.
 
 ```tsx
-import { ThemeProvider, ThemeScript, ThemeToggle, Card, Button, Badge, Textarea, Field } from "@ve/ui";
+import {
+  ThemeProvider,
+  ThemeScript,
+  ThemeToggle,
+  Card,
+  Button,
+  Badge,
+  Textarea,
+  Field,
+  Checkbox,
+  Switch,
+  Select,
+  Dialog
+} from "@ve/ui";
 
 export function App() {
   return (
@@ -42,10 +55,19 @@ export function App() {
           </Card.Header>
           <Card.Body>
             <Field>
-              <Field.Label>Notes</Field.Label>
-              <Textarea name="notes" />
+              <Field.Label>Plan</Field.Label>
+              <Select name="plan" defaultValue="pro">
+                <option value="pro">Pro</option>
+              </Select>
             </Field>
-            <Button>Save</Button>
+            <Field>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <Checkbox name="tos" />
+                <Field.Label>Agree</Field.Label>
+              </div>
+            </Field>
+            <Switch aria-label="Alerts" />
+            <Button onClick={() => {}}>Open dialog</Button>
           </Card.Body>
         </Card>
       </ThemeProvider>
@@ -58,6 +80,8 @@ export function App() {
 
 - [`docs/color-modes.md`](docs/color-modes.md) — light/dark 토큰·Provider
 - [`docs/ds-improvements.md`](docs/ds-improvements.md) — ThemeScript / Textarea / Badge
+- [`docs/form-overlay.md`](docs/form-overlay.md) — Checkbox / Switch / Select / Dialog
+- [`docs/a11y-policy.md`](docs/a11y-policy.md) — 폼·오버레이 접근성 폴리시
 
 ## Quality Gates
 

@@ -166,10 +166,22 @@ export { useFocusTrap }; // 내부 또는 export
 
 ## 9. 체크리스트
 
-- [ ] Checkbox
-- [ ] Switch
-- [ ] Select
-- [ ] Dialog + focus trap
-- [ ] 오버레이 토큰
-- [ ] 9/7–9/13 일자 커밋
-- [ ] docs 반영
+- [x] Checkbox
+- [x] Switch
+- [x] Select
+- [x] Dialog + focus trap
+- [x] 오버레이 토큰
+- [x] 9/7–9/13 일자 커밋
+- [x] docs 반영
+
+## 10. 구현 완료 기록
+
+| PHASE | 날짜 | 커밋 요지 |
+|-------|------|-----------|
+| 0 | 2026-09-07 | 설계서 `docs/form-overlay.md` |
+| 1 | 2026-09-08 | Checkbox |
+| 2 | 2026-09-09 | Switch |
+| 3 | 2026-09-10 | Select |
+| 4 | 2026-09-11 | Dialog + overlay tokens |
+| 5 | 2026-09-12 | a11y 폴리시 · focus trap 테스트 |
+| 6 | 2026-09-13 | design.md / README 통합 검증 |

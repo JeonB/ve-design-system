@@ -11,14 +11,17 @@
 
 - `Button` component with `variant` (`solid`, `secondary`, `outline`, `ghost`, `danger`, `dangerOutline`, `link`), `size` (`sm`, `md`, `lg`, `icon`), loading/icons/fullWidth/asChild/pressed.
 - `ButtonGroup` for dialog footers and attached toolbars.
-- `Field` + `Input` / `Textarea` compound form pattern: label/description/error wiring, sizes, invalid/disabled, icon slots (Input).
+- `Field` + `Input` / `Textarea` / `Select` / `Checkbox` compound form pattern.
+- `Switch` for immediate on/off settings (`role="switch"`).
 - Color modes (`light` / `dark` / `system`) via `createThemeContract` + `ThemeProvider` + `ThemeScript` (FOUC).
 - `Card` compound surface that consumes theme color/shadow tokens.
 - `Badge` with semantic variants (`neutral`, `primary`, `success`, `warning`, `danger`, `outline`).
+- `Dialog` modal with focus trap, Esc/overlay dismiss, overlay tokens.
 - Storybook as visual contract for component behavior (toolbar theme switch).
 
 ## Next Steps
 
 - Optional brand themes / `assignInlineVars` dynamic palettes.
-- Select / Checkbox / Dialog primitives.
+- Custom listbox Select / Combobox / Checkbox group.
+- Drawer / Sheet overlays.
 - Visual regression (Chromatic) optional CI.
