@@ -61,6 +61,16 @@ export type {
   CardTitleProps,
   CardVariant
 } from "./components/card";
+export { Stack } from "./components/stack";
+export type {
+  StackAlign,
+  StackDirection,
+  StackGap,
+  StackJustify,
+  StackProps
+} from "./components/stack";
+export { Separator } from "./components/separator";
+export type { SeparatorOrientation, SeparatorProps } from "./components/separator";
 export { ThemeProvider, ThemeScript, ThemeToggle, getThemeInitScript, useTheme } from "./theme";
 export type {
   ThemeProviderProps,
