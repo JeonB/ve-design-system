@@ -22,6 +22,8 @@ export { Checkbox } from "./components/checkbox";
 export type { CheckboxProps, CheckboxSize } from "./components/checkbox";
 export { CheckboxGroup, CheckboxGroupItem } from "./components/checkbox-group";
 export type { CheckboxGroupItemProps, CheckboxGroupProps } from "./components/checkbox-group";
+export { RadioGroup, RadioGroupItem } from "./components/radio-group";
+export type { RadioGroupItemProps, RadioGroupProps } from "./components/radio-group";
 export { Switch } from "./components/switch";
 export type { SwitchProps, SwitchSize } from "./components/switch";
 export { Select } from "./components/select";
