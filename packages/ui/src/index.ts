@@ -46,6 +46,27 @@ export type {
   DialogProps,
   DialogTitleProps
 } from "./components/dialog";
+export {
+  Drawer,
+  DrawerBody,
+  DrawerClose,
+  DrawerContent,
+  DrawerDescription,
+  DrawerFooter,
+  DrawerHeader,
+  DrawerTitle
+} from "./components/drawer";
+export type {
+  DrawerBodyProps,
+  DrawerCloseProps,
+  DrawerContentProps,
+  DrawerDescriptionProps,
+  DrawerFooterProps,
+  DrawerHeaderProps,
+  DrawerProps,
+  DrawerSide,
+  DrawerTitleProps
+} from "./components/drawer";
 export { useFocusTrap } from "./hooks/use-focus-trap";
 export {
   Card,

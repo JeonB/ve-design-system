@@ -136,7 +136,9 @@ export const staticVars = createGlobalTheme(":root", {
   zIndex: {
     focus: "1",
     overlay: "1000",
-    dialog: "1001"
+    dialog: "1001",
+    drawer: "1001",
+    toast: "1100"
   },
   layout: {
     full: "100%"
