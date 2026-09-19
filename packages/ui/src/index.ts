@@ -67,6 +67,8 @@ export type {
   DrawerSide,
   DrawerTitleProps
 } from "./components/drawer";
+export { ToastProvider, useToast } from "./components/toast";
+export type { ToastInput, ToastProviderProps, ToastVariant } from "./components/toast";
 export { useFocusTrap } from "./hooks/use-focus-trap";
 export {
   Card,
