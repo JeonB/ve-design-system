@@ -163,10 +163,23 @@ toast({ title: "Saved", description: "…", variant: "success" });
 
 ## 10. 체크리스트
 
-- [ ] Stack / Separator
-- [ ] CheckboxGroup / RadioGroup
-- [ ] Drawer
-- [ ] Toast
-- [ ] Skeleton / Spinner
-- [ ] 9/14–9/21 일자 커밋
-- [ ] docs 반영
+- [x] Stack / Separator
+- [x] CheckboxGroup / RadioGroup
+- [x] Drawer
+- [x] Toast
+- [x] Skeleton / Spinner
+- [x] 9/14–9/21 일자 커밋
+- [x] docs 반영
+
+## 11. 구현 완료 기록
+
+| PHASE | 날짜 | 커밋 요지 |
+|-------|------|-----------|
+| 0 | 2026-09-14 | 설계서 `docs/layout-feedback.md` |
+| 1 | 2026-09-15 | Stack · Separator |
+| 2 | 2026-09-16 | CheckboxGroup |
+| 3 | 2026-09-17 | RadioGroup |
+| 4 | 2026-09-18 | Drawer |
+| 5 | 2026-09-19 | ToastProvider / useToast |
+| 6 | 2026-09-20 | Skeleton · Spinner |
+| 7 | 2026-09-21 | design.md / README 통합 검증 |

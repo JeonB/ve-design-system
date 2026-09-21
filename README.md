@@ -17,8 +17,8 @@ pnpm --filter storybook dev
 
 ## Workspace
 
-- `packages/tokens`: theme tokens (`@vanilla-extract/css`) — static + color contract (light/dark, success/warning, overlay)
-- `packages/ui`: React UI primitives (`ThemeProvider`, `ThemeScript`, `Button`, `Field`, `Input`, `Textarea`, `Select`, `Checkbox`, `Switch`, `Card`, `Badge`, `Dialog`)
+- `packages/tokens`: theme tokens (`@vanilla-extract/css`) — static + color contract (light/dark, success/warning, overlay, drawer/toast zIndex)
+- `packages/ui`: React UI primitives (`ThemeProvider`, `ThemeScript`, `Button`, `Field`, `Input`, `Textarea`, `Select`, `Checkbox`, `CheckboxGroup`, `RadioGroup`, `Switch`, `Card`, `Badge`, `Dialog`, `Drawer`, `ToastProvider`, `Stack`, `Separator`, `Skeleton`, `Spinner`)
 - `apps/storybook`: component preview and documentation (toolbar theme switch)
 
 ## Color modes
@@ -34,42 +34,58 @@ import {
   Card,
   Button,
   Badge,
-  Textarea,
   Field,
-  Checkbox,
-  Switch,
-  Select,
-  Dialog
+  CheckboxGroup,
+  RadioGroup,
+  Stack,
+  Separator,
+  ToastProvider,
+  useToast,
+  Skeleton,
+  Spinner
 } from "@ve/ui";
+
+function Notify() {
+  const { toast } = useToast();
+  return (
+    <Button onClick={() => toast({ title: "Saved", variant: "success" })}>Save</Button>
+  );
+}
 
 export function App() {
   return (
     <>
       <ThemeScript defaultMode="system" />
       <ThemeProvider defaultMode="system">
-        <ThemeToggle />
-        <Card>
-          <Card.Header>
-            <Card.Title>Hello</Card.Title>
-            <Badge variant="success" size="sm">Live</Badge>
-          </Card.Header>
-          <Card.Body>
-            <Field>
-              <Field.Label>Plan</Field.Label>
-              <Select name="plan" defaultValue="pro">
-                <option value="pro">Pro</option>
-              </Select>
-            </Field>
-            <Field>
-              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
-                <Checkbox name="tos" />
-                <Field.Label>Agree</Field.Label>
-              </div>
-            </Field>
-            <Switch aria-label="Alerts" />
-            <Button onClick={() => {}}>Open dialog</Button>
-          </Card.Body>
-        </Card>
+        <ToastProvider>
+          <ThemeToggle />
+          <Card>
+            <Card.Header>
+              <Card.Title>Hello</Card.Title>
+              <Badge variant="success" size="sm">
+                Live
+              </Badge>
+            </Card.Header>
+            <Card.Body>
+              <Stack gap="md">
+                <RadioGroup legend="Plan" name="plan" defaultValue="pro">
+                  <RadioGroup.Item value="free">Free</RadioGroup.Item>
+                  <RadioGroup.Item value="pro">Pro</RadioGroup.Item>
+                </RadioGroup>
+                <Separator />
+                <CheckboxGroup legend="Roles" name="roles" defaultValue={["editor"]}>
+                  <CheckboxGroup.Item value="admin">Admin</CheckboxGroup.Item>
+                  <CheckboxGroup.Item value="editor">Editor</CheckboxGroup.Item>
+                </CheckboxGroup>
+                <Stack direction="horizontal" gap="sm" align="center">
+                  <Spinner size="sm" label="Loading" />
+                  <Skeleton width="8rem" height="1rem" />
+                  <Notify />
+                </Stack>
+              </Stack>
+            </Card.Body>
+          </Card>
+        </ToastProvider>
       </ThemeProvider>
     </>
   );
@@ -81,6 +97,7 @@ export function App() {
 - [`docs/color-modes.md`](docs/color-modes.md) — light/dark 토큰·Provider
 - [`docs/ds-improvements.md`](docs/ds-improvements.md) — ThemeScript / Textarea / Badge
 - [`docs/form-overlay.md`](docs/form-overlay.md) — Checkbox / Switch / Select / Dialog
+- [`docs/layout-feedback.md`](docs/layout-feedback.md) — Stack / Group / Drawer / Toast / Skeleton
 - [`docs/a11y-policy.md`](docs/a11y-policy.md) — 폼·오버레이 접근성 폴리시
 
 ## Quality Gates
