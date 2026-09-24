@@ -71,6 +71,8 @@ export { ToastProvider, useToast } from "./components/toast";
 export type { ToastInput, ToastProviderProps, ToastVariant } from "./components/toast";
 export { Alert, ALERT_VARIANTS } from "./components/alert";
 export type { AlertProps, AlertVariant } from "./components/alert";
+export { Avatar } from "./components/avatar";
+export type { AvatarProps, AvatarSize } from "./components/avatar";
 export { Skeleton } from "./components/skeleton";
 export type { SkeletonProps, SkeletonVariant } from "./components/skeleton";
 export { Spinner } from "./components/spinner";
