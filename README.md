@@ -13,6 +13,7 @@ vanilla-extract 기반 디자인 시스템 스타터입니다.
 pnpm install
 pnpm build          # @ve/tokens, @ve/ui dist 생성 — 아래 "모듈 해석" 참고
 pnpm --filter storybook dev
+pnpm --filter tracker dev   # http://localhost:4310
 ```
 
 ## Workspace
