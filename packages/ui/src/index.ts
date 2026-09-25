@@ -73,6 +73,13 @@ export { Alert, ALERT_VARIANTS } from "./components/alert";
 export type { AlertProps, AlertVariant } from "./components/alert";
 export { Avatar } from "./components/avatar";
 export type { AvatarProps, AvatarSize } from "./components/avatar";
+export { Tabs, TabsContent, TabsList, TabsTrigger } from "./components/tabs";
+export type {
+  TabsContentProps,
+  TabsListProps,
+  TabsProps,
+  TabsTriggerProps
+} from "./components/tabs";
 export { Skeleton } from "./components/skeleton";
 export type { SkeletonProps, SkeletonVariant } from "./components/skeleton";
 export { Spinner } from "./components/spinner";
