@@ -107,8 +107,17 @@ Dialog/Drawer처럼 compound `Object.assign` 패턴 유지.
 
 ## 6. 체크리스트
 
-- [ ] Alert
-- [ ] Avatar
-- [ ] Tabs (키보드 로빙)
-- [ ] 9/22–9/25 일자 커밋
-- [ ] docs 반영
+- [x] Alert
+- [x] Avatar
+- [x] Tabs (키보드 로빙)
+- [x] 9/22–9/25 일자 커밋
+- [x] docs 반영
+
+## 7. 구현 완료 기록
+
+| PHASE | 날짜 | 커밋 요지 |
+|-------|------|-----------|
+| 0 | 2026-09-22 | 설계서 `docs/surface-nav.md` |
+| 1 | 2026-09-23 | Alert |
+| 2 | 2026-09-24 | Avatar |
+| 3 | 2026-09-25 | Tabs · design.md / README 통합 검증 |

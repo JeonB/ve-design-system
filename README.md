@@ -18,7 +18,7 @@ pnpm --filter storybook dev
 ## Workspace
 
 - `packages/tokens`: theme tokens (`@vanilla-extract/css`) — static + color contract (light/dark, success/warning, overlay, drawer/toast zIndex)
-- `packages/ui`: React UI primitives (`ThemeProvider`, `ThemeScript`, `Button`, `Field`, `Input`, `Textarea`, `Select`, `Checkbox`, `CheckboxGroup`, `RadioGroup`, `Switch`, `Card`, `Badge`, `Dialog`, `Drawer`, `ToastProvider`, `Stack`, `Separator`, `Skeleton`, `Spinner`)
+- `packages/ui`: React UI primitives (`ThemeProvider`, `ThemeScript`, `Button`, `Field`, `Input`, `Textarea`, `Select`, `Checkbox`, `CheckboxGroup`, `RadioGroup`, `Switch`, `Card`, `Badge`, `Alert`, `Avatar`, `Dialog`, `Drawer`, `ToastProvider`, `Tabs`, `Stack`, `Separator`, `Skeleton`, `Spinner`)
 - `apps/storybook`: component preview and documentation (toolbar theme switch)
 
 ## Color modes
@@ -34,15 +34,12 @@ import {
   Card,
   Button,
   Badge,
-  Field,
-  CheckboxGroup,
-  RadioGroup,
+  Alert,
+  Avatar,
+  Tabs,
   Stack,
-  Separator,
   ToastProvider,
-  useToast,
-  Skeleton,
-  Spinner
+  useToast
 } from "@ve/ui";
 
 function Notify() {
@@ -61,27 +58,29 @@ export function App() {
           <ThemeToggle />
           <Card>
             <Card.Header>
-              <Card.Title>Hello</Card.Title>
-              <Badge variant="success" size="sm">
-                Live
-              </Badge>
+              <Stack direction="horizontal" gap="sm" align="center">
+                <Avatar alt="Ada Lovelace" fallback="AL" />
+                <Card.Title>Hello</Card.Title>
+                <Badge variant="success" size="sm">
+                  Live
+                </Badge>
+              </Stack>
             </Card.Header>
             <Card.Body>
               <Stack gap="md">
-                <RadioGroup legend="Plan" name="plan" defaultValue="pro">
-                  <RadioGroup.Item value="free">Free</RadioGroup.Item>
-                  <RadioGroup.Item value="pro">Pro</RadioGroup.Item>
-                </RadioGroup>
-                <Separator />
-                <CheckboxGroup legend="Roles" name="roles" defaultValue={["editor"]}>
-                  <CheckboxGroup.Item value="admin">Admin</CheckboxGroup.Item>
-                  <CheckboxGroup.Item value="editor">Editor</CheckboxGroup.Item>
-                </CheckboxGroup>
-                <Stack direction="horizontal" gap="sm" align="center">
-                  <Spinner size="sm" label="Loading" />
-                  <Skeleton width="8rem" height="1rem" />
-                  <Notify />
-                </Stack>
+                <Alert title="Welcome" variant="info">
+                  Inline feedback stays on the page; toasts dismiss automatically.
+                </Alert>
+                <Tabs defaultValue="general">
+                  <Tabs.List aria-label="Settings">
+                    <Tabs.Trigger value="general">General</Tabs.Trigger>
+                    <Tabs.Trigger value="team">Team</Tabs.Trigger>
+                  </Tabs.List>
+                  <Tabs.Content value="general">
+                    <Notify />
+                  </Tabs.Content>
+                  <Tabs.Content value="team">Members and roles.</Tabs.Content>
+                </Tabs>
               </Stack>
             </Card.Body>
           </Card>
@@ -98,6 +97,7 @@ export function App() {
 - [`docs/ds-improvements.md`](docs/ds-improvements.md) — ThemeScript / Textarea / Badge
 - [`docs/form-overlay.md`](docs/form-overlay.md) — Checkbox / Switch / Select / Dialog
 - [`docs/layout-feedback.md`](docs/layout-feedback.md) — Stack / Group / Drawer / Toast / Skeleton
+- [`docs/surface-nav.md`](docs/surface-nav.md) — Alert / Avatar / Tabs
 - [`docs/a11y-policy.md`](docs/a11y-policy.md) — 폼·오버레이 접근성 폴리시
 
 ## Quality Gates

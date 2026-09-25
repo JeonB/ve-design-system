@@ -1,7 +1,7 @@
 # 접근성 폴리시 (Form / Overlay)
 
 > 작성일: 2026-09-12  
-> 대상: Checkbox, Switch, Select, Dialog, Field 계열
+> 대상: Checkbox, Switch, Select, Dialog, Field 계열, Alert, Tabs
 
 ## 원칙
 
@@ -11,6 +11,7 @@
 4. **설명 연결**: Field Description/Error는 `aria-describedby`로만 연결한다. 존재하지 않는 id를 넣지 않는다.
 5. **포커스**: Dialog는 열릴 때 focus trap, 닫힐 때 이전 포커스 복원. Esc·오버레이 닫기는 기본 on.
 6. **모달**: `aria-modal="true"`, body scroll lock, `aria-labelledby` 필수. Description이 있을 때만 `aria-describedby`.
+7. **피드백 역할**: Toast = 일시·자동 dismiss / Alert = 인라인 유지. warning·danger Alert는 `role="alert"`.
 
 ## 컴포넌트별
 
@@ -20,6 +21,8 @@
 | Switch | 즉시 설정 토글 | 폼 `name` 제출이 필요하면 Checkbox |
 | Select | 단일 선택 | 커스텀 listbox는 후속 |
 | Dialog | 모달 | `useFocusTrap` 필수 |
+| Alert | 인라인 상태 | Toast와 혼용하지 말 것 |
+| Tabs | 섹션 전환 | 화살표·Home/End 로빙, 선택 탭만 `tabIndex=0` |
 
 ## 테스트 최소선
 

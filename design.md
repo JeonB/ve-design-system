@@ -21,6 +21,9 @@
 - `Dialog` modal with focus trap, Esc/overlay dismiss, overlay tokens.
 - `Drawer` side panel overlay (shares focus trap with Dialog).
 - `ToastProvider` / `useToast` for non-modal feedback (max 3, auto-dismiss).
+- `Alert` for persistent inline status banners (`status` / `alert` roles).
+- `Avatar` with image and initials fallback.
+- `Tabs` compound navigation with keyboard roving (`tablist` / `tab` / `tabpanel`).
 - `Skeleton` / public `Spinner` loading indicators.
 - Storybook as visual contract for component behavior (toolbar theme switch).
 
@@ -28,4 +31,5 @@
 
 - Optional brand themes / `assignInlineVars` dynamic palettes.
 - Custom listbox Select / Combobox.
+- Tooltip / Popover / AvatarGroup.
 - Visual regression (Chromatic) optional CI.
