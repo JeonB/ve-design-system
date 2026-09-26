@@ -2,8 +2,9 @@ import { createContext, useCallback, useContext, useMemo, useRef, useState, type
 import { useToast } from "@ve/ui";
 import { addComment, appendIssue, deleteIssue, updateIssue } from "./issues";
 import type { CreateIssueInput, Issue, IssuePatch, TrackerData } from "./issue.types";
-import { CURRENT_ACTOR_ID, seedTracker } from "./seed";
+import { CURRENT_ACTOR_ID } from "./seed";
 import { statusLabel } from "./labels";
+import { loadTracker, saveTracker } from "./storage";
 
 type TrackerContextValue = TrackerData & {
   actorId: string;
@@ -16,13 +17,14 @@ type TrackerContextValue = TrackerData & {
 const TrackerContext = createContext<TrackerContextValue | null>(null);
 
 export function TrackerProvider({ children }: { children: ReactNode }) {
-  const [data, setData] = useState(seedTracker);
+  const [data, setData] = useState(() => loadTracker(window.localStorage));
   const dataRef = useRef(data);
   const { toast } = useToast();
 
   const commit = useCallback((next: TrackerData) => {
     dataRef.current = next;
     setData(next);
+    saveTracker(window.localStorage, next);
   }, []);
 
   const createIssue = useCallback(
@@ -38,7 +40,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
   const update = useCallback(
     (issueId: string, patch: IssuePatch) => {
       const current = dataRef.current.issues.find((issue) => issue.id === issueId);
-      commit(updateIssue(dataRef.current, issueId, patch, new Date().toISOString()));
+      commit(updateIssue(dataRef.current, issueId, patch, new Date().toISOString(), CURRENT_ACTOR_ID));
       const statusOnly = Object.keys(patch).length === 1 && patch.status !== undefined;
       if (statusOnly && current && patch.status && patch.status !== current.status) {
         toast({ title: `${current.key} moved to ${statusLabel(patch.status)}`, variant: "success" });

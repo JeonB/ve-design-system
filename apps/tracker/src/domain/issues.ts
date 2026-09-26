@@ -1,4 +1,6 @@
 import type {
+  ActivityEntry,
+  ActivityField,
   CreateIssueInput,
   Issue,
   IssueFilter,
@@ -59,7 +61,17 @@ export function appendIssue(
     reporterId: actorId,
     createdAt: now,
     updatedAt: now,
-    comments: []
+    comments: [],
+    activity: [
+      {
+        id: `${projectKey}-${number}-a1`,
+        actorId,
+        at: now,
+        field: "created",
+        from: "",
+        to: input.summary.trim()
+      }
+    ]
   };
 
   return {
@@ -68,7 +80,31 @@ export function appendIssue(
   };
 }
 
-export function updateIssue(data: TrackerData, issueId: string, patch: IssuePatch, now: string): TrackerData {
+const PATCH_FIELDS: Array<{ key: keyof IssuePatch; field: ActivityField }> = [
+  { key: "summary", field: "summary" },
+  { key: "description", field: "description" },
+  { key: "type", field: "type" },
+  { key: "status", field: "status" },
+  { key: "priority", field: "priority" },
+  { key: "assigneeId", field: "assignee" }
+];
+
+function readPatchValue(issue: Issue, key: keyof IssuePatch): string {
+  const value = issue[key];
+  return value === undefined ? "" : String(value);
+}
+
+function nextActivity(issue: Issue, entry: Omit<ActivityEntry, "id">, offset = 1): ActivityEntry {
+  return { ...entry, id: `${issue.id}-a${issue.activity.length + offset}` };
+}
+
+export function updateIssue(
+  data: TrackerData,
+  issueId: string,
+  patch: IssuePatch,
+  now: string,
+  actorId: string
+): TrackerData {
   return {
     ...data,
     issues: data.issues.map((issue) => {
@@ -76,12 +112,45 @@ export function updateIssue(data: TrackerData, issueId: string, patch: IssuePatc
         return issue;
       }
 
-      return {
+      const nextSummary = patch.summary === undefined ? issue.summary : patch.summary.trim();
+      const nextDescription = patch.description === undefined ? issue.description : patch.description.trim();
+      const next: Issue = {
         ...issue,
         ...patch,
-        summary: patch.summary === undefined ? issue.summary : patch.summary.trim(),
-        description: patch.description === undefined ? issue.description : patch.description.trim(),
-        updatedAt: now
+        summary: nextSummary,
+        description: nextDescription
+      };
+      const changes: ActivityEntry[] = [];
+
+      for (const tracked of PATCH_FIELDS) {
+        const before = readPatchValue(issue, tracked.key);
+        const after = readPatchValue(next, tracked.key);
+        if (before === after) {
+          continue;
+        }
+        changes.push(
+          nextActivity(
+            issue,
+            {
+              actorId,
+              at: now,
+              field: tracked.field,
+              from: before,
+              to: after
+            },
+            changes.length + 1
+          )
+        );
+      }
+
+      if (changes.length === 0) {
+        return issue;
+      }
+
+      return {
+        ...next,
+        updatedAt: now,
+        activity: [...issue.activity, ...changes]
       };
     })
   };
@@ -113,17 +182,26 @@ export function addComment(
         return issue;
       }
 
+      const comment = {
+        id: `${issueId}-c${issue.comments.length + 1}`,
+        authorId,
+        body: trimmed,
+        createdAt: now
+      };
+
       return {
         ...issue,
         updatedAt: now,
-        comments: [
-          ...issue.comments,
-          {
-            id: `${issueId}-c${issue.comments.length + 1}`,
-            authorId,
-            body: trimmed,
-            createdAt: now
-          }
+        comments: [...issue.comments, comment],
+        activity: [
+          ...issue.activity,
+          nextActivity(issue, {
+            actorId: authorId,
+            at: now,
+            field: "comment",
+            from: "",
+            to: trimmed
+          })
         ]
       };
     })

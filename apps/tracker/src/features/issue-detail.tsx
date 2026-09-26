@@ -12,6 +12,7 @@ import {
   Textarea
 } from "@ve/ui";
 import { Link, useNavigate } from "react-router";
+import { formatActivity } from "../domain/activity-text";
 import { issueById, personById } from "../domain/issues";
 import { validateSummary } from "../domain/issue.types";
 import { useTracker } from "../domain/tracker-context";
@@ -136,6 +137,16 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
                 Fields
               </Button>
             </span>
+          </Stack>
+          <Separator />
+          <Stack gap="sm">
+            <strong>Activity</strong>
+            {currentIssue.activity.length === 0 ? <p>No activity yet.</p> : null}
+            {currentIssue.activity.map((entry) => (
+              <p key={entry.id}>
+                {personById(data, entry.actorId)?.name ?? "Someone"} {formatActivity(entry, data.people)}
+              </p>
+            ))}
           </Stack>
           <Separator />
           <Stack gap="sm">

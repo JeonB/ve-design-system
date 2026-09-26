@@ -28,7 +28,7 @@ describe("issues", () => {
 
   it("상태 변경은 updatedAt을 갱신한다", () => {
     const data = seedTracker();
-    const next = updateIssue(data, "WEB-2", { status: "in_progress" }, "2026-09-25T11:00:00.000Z");
+    const next = updateIssue(data, "WEB-2", { status: "in_progress" }, "2026-09-25T11:00:00.000Z", "ada");
     expect(next.issues.find((issue) => issue.id === "WEB-2")).toMatchObject({
       status: "in_progress",
       updatedAt: "2026-09-25T11:00:00.000Z"

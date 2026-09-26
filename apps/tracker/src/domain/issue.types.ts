@@ -25,6 +25,28 @@ export type Comment = {
   createdAt: string;
 };
 
+export const ACTIVITY_FIELDS = [
+  "created",
+  "summary",
+  "description",
+  "type",
+  "status",
+  "priority",
+  "assignee",
+  "comment"
+] as const;
+
+export type ActivityField = (typeof ACTIVITY_FIELDS)[number];
+
+export type ActivityEntry = {
+  id: string;
+  actorId: string;
+  at: string;
+  field: ActivityField;
+  from: string;
+  to: string;
+};
+
 export type Issue = {
   id: string;
   number: number;
@@ -40,6 +62,7 @@ export type Issue = {
   createdAt: string;
   updatedAt: string;
   comments: Comment[];
+  activity: ActivityEntry[];
 };
 
 export type TrackerData = {
@@ -81,6 +104,10 @@ export function isIssueStatus(value: string): value is IssueStatus {
 
 export function isPriority(value: string): value is Priority {
   return (PRIORITIES as readonly string[]).includes(value);
+}
+
+export function isActivityField(value: string): value is ActivityField {
+  return (ACTIVITY_FIELDS as readonly string[]).includes(value);
 }
 
 export function validateSummary(summary: string): string | null {

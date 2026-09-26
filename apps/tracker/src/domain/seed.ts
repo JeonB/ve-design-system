@@ -1,8 +1,10 @@
-import type { TrackerData } from "./issue.types";
+import type { Issue, TrackerData } from "./issue.types";
 
 export const CURRENT_ACTOR_ID = "ada";
 
-export function seedTracker(): TrackerData {
+type DraftIssue = Omit<Issue, "activity">;
+
+function draftTracker(): Omit<TrackerData, "issues"> & { issues: DraftIssue[] } {
   return {
     projects: [
       {
@@ -142,5 +144,13 @@ export function seedTracker(): TrackerData {
         comments: []
       }
     ]
+  };
+}
+
+export function seedTracker(): TrackerData {
+  const drafted = draftTracker();
+  return {
+    ...drafted,
+    issues: drafted.issues.map((issue) => ({ ...issue, activity: [] }))
   };
 }
