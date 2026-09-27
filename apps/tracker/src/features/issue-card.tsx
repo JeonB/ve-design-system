@@ -1,7 +1,7 @@
 import { Avatar, Badge, Button, Card, Select, Stack } from "@ve/ui";
 import { Link } from "react-router";
 import { personById } from "../domain/issues";
-import { isIssueStatus, type Issue, type IssueStatus, type TrackerData } from "../domain/issue.types";
+import { ISSUE_STATUSES, isIssueStatus, type Issue, type IssueStatus, type TrackerData } from "../domain/issue.types";
 import { priorityLabel, statusLabel, typeLabel } from "../domain/labels";
 import { priorityBadgeVariant, typeBadgeVariant } from "./issue-badges";
 
@@ -44,7 +44,7 @@ export function IssueCard({ issue, data, onStatusChange }: IssueCardProps) {
             onStatusChange(issue.id, next);
           }}
         >
-          {(["backlog", "todo", "in_progress", "in_review", "done"] as const).map((status) => (
+          {ISSUE_STATUSES.map((status) => (
             <option key={status} value={status}>
               {statusLabel(status)}
             </option>

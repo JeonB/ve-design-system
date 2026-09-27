@@ -2,9 +2,9 @@ import type { Issue, TrackerData } from "./issue.types";
 
 export const CURRENT_ACTOR_ID = "ada";
 
-type DraftIssue = Omit<Issue, "activity">;
+type DraftIssue = Omit<Issue, "activity" | "sprintId" | "rank">;
 
-function draftTracker(): Omit<TrackerData, "issues"> & { issues: DraftIssue[] } {
+function draftTracker(): { projects: TrackerData["projects"]; people: TrackerData["people"]; issues: DraftIssue[] } {
   return {
     projects: [
       {
@@ -85,7 +85,7 @@ function draftTracker(): Omit<TrackerData, "issues"> & { issues: DraftIssue[] } 
         key: "WEB-4",
         projectKey: "WEB",
         type: "epic",
-        status: "backlog",
+        status: "todo",
         priority: "medium",
         summary: "Docs IA refresh",
         description: "Group getting started, guides, and reference.",
@@ -150,7 +150,31 @@ function draftTracker(): Omit<TrackerData, "issues"> & { issues: DraftIssue[] } 
 export function seedTracker(): TrackerData {
   const drafted = draftTracker();
   return {
-    ...drafted,
-    issues: drafted.issues.map((issue) => ({ ...issue, activity: [] }))
+    projects: drafted.projects,
+    people: drafted.people,
+    sprints: [
+      {
+        id: "WEB-S1",
+        projectKey: "WEB",
+        name: "Sprint 1",
+        state: "active",
+        startDate: "2026-09-22",
+        endDate: "2026-10-03"
+      },
+      {
+        id: "API-S1",
+        projectKey: "API",
+        name: "Sprint 1",
+        state: "active",
+        startDate: "2026-09-22",
+        endDate: "2026-10-03"
+      }
+    ],
+    issues: drafted.issues.map((issue) => ({
+      ...issue,
+      activity: [],
+      sprintId: issue.id === "WEB-4" ? null : `${issue.projectKey}-S1`,
+      rank: issue.number
+    }))
   };
 }

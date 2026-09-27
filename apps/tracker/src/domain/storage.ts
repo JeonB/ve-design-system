@@ -1,8 +1,21 @@
-import { isActivityField, isIssueStatus, isIssueType, isPriority, type ActivityEntry, type Comment, type Issue, type Person, type Project, type TrackerData } from "./issue.types";
+import {
+  isActivityField,
+  isIssueStatus,
+  isIssueType,
+  isPriority,
+  isSprintState,
+  type ActivityEntry,
+  type Comment,
+  type Issue,
+  type Person,
+  type Project,
+  type Sprint,
+  type TrackerData
+} from "./issue.types";
 import { seedTracker } from "./seed";
 
 export const TRACKER_STORAGE_KEY = "ve-tracker-data";
-export const TRACKER_SCHEMA_VERSION = 1;
+export const TRACKER_SCHEMA_VERSION = 2;
 
 type KeyValueStorage = Pick<Storage, "getItem" | "setItem">;
 
@@ -49,7 +62,12 @@ function readActivity(value: unknown): ActivityEntry | null {
   };
 }
 
-function readIssue(value: unknown): Issue | null {
+type ReadIssue = {
+  issue: Issue;
+  legacyOnBoard: boolean;
+};
+
+function readIssue(value: unknown): ReadIssue | null {
   if (!isRecord(value)) {
     return null;
   }
@@ -61,7 +79,7 @@ function readIssue(value: unknown): Issue | null {
     !isString(value.type) ||
     !isIssueType(value.type) ||
     !isString(value.status) ||
-    !isIssueStatus(value.status) ||
+    (value.status !== "backlog" && !isIssueStatus(value.status)) ||
     !isString(value.priority) ||
     !isPriority(value.priority) ||
     !isString(value.summary) ||
@@ -98,22 +116,57 @@ function readIssue(value: unknown): Issue | null {
     }
   }
 
+  const legacyOnBoard = value.sprintId === undefined && value.status !== "backlog";
+  const sprintId = isString(value.sprintId) || value.sprintId === null ? value.sprintId : null;
+  const rank = typeof value.rank === "number" ? value.rank : value.number;
+  if (!isIssueStatus(value.status) && value.status !== "backlog") {
+    return null;
+  }
+
+  return {
+    legacyOnBoard,
+    issue: {
+      id: value.id,
+      number: value.number,
+      key: value.key,
+      projectKey: value.projectKey,
+      type: value.type,
+      status: value.status === "backlog" ? "todo" : value.status,
+      priority: value.priority,
+      summary: value.summary,
+      description: value.description,
+      assigneeId: value.assigneeId,
+      reporterId: value.reporterId,
+      sprintId: value.status === "backlog" ? null : sprintId,
+      rank,
+      createdAt: value.createdAt,
+      updatedAt: value.updatedAt,
+      comments,
+      activity
+    }
+  };
+}
+
+function readSprint(value: unknown): Sprint | null {
+  if (
+    !isRecord(value) ||
+    !isString(value.id) ||
+    !isString(value.projectKey) ||
+    !isString(value.name) ||
+    !isString(value.state) ||
+    !isSprintState(value.state) ||
+    !(isString(value.startDate) || value.startDate === null) ||
+    !(isString(value.endDate) || value.endDate === null)
+  ) {
+    return null;
+  }
   return {
     id: value.id,
-    number: value.number,
-    key: value.key,
     projectKey: value.projectKey,
-    type: value.type,
-    status: value.status,
-    priority: value.priority,
-    summary: value.summary,
-    description: value.description,
-    assigneeId: value.assigneeId,
-    reporterId: value.reporterId,
-    createdAt: value.createdAt,
-    updatedAt: value.updatedAt,
-    comments,
-    activity
+    name: value.name,
+    state: value.state,
+    startDate: value.startDate,
+    endDate: value.endDate
   };
 }
 
@@ -138,13 +191,14 @@ export function parseTracker(raw: string): TrackerData | null {
   } catch {
     return null;
   }
-  if (!isRecord(parsed) || parsed.version !== TRACKER_SCHEMA_VERSION || !isRecord(parsed.data)) {
+  if (!isRecord(parsed) || (parsed.version !== 1 && parsed.version !== TRACKER_SCHEMA_VERSION) || !isRecord(parsed.data)) {
     return null;
   }
   const data = parsed.data;
   if (!Array.isArray(data.projects) || !Array.isArray(data.people) || !Array.isArray(data.issues)) {
     return null;
   }
+  const legacy = parsed.version === 1;
 
   const projects: Project[] = [];
   for (const item of data.projects) {
@@ -165,15 +219,53 @@ export function parseTracker(raw: string): TrackerData | null {
   }
 
   const issues: Issue[] = [];
+  const legacyBoardIds = new Set<string>();
   for (const item of data.issues) {
-    const issue = readIssue(item);
-    if (!issue) {
+    const read = readIssue(item);
+    if (!read) {
       return null;
     }
-    issues.push(issue);
+    if (read.legacyOnBoard) {
+      legacyBoardIds.add(read.issue.id);
+    }
+    issues.push(read.issue);
   }
 
-  return { projects, people, issues };
+  const sprints: Sprint[] = [];
+  if (Array.isArray(data.sprints)) {
+    for (const item of data.sprints) {
+      const sprint = readSprint(item);
+      if (!sprint) {
+        return null;
+      }
+      sprints.push(sprint);
+    }
+  } else if (!legacy) {
+    return null;
+  }
+
+  if (legacyBoardIds.size > 0) {
+    for (const project of projects) {
+      const sprintId = `${project.key}-S1`;
+      if (!sprints.some((sprint) => sprint.id === sprintId)) {
+        sprints.push({
+          id: sprintId,
+          projectKey: project.key,
+          name: "Sprint 1",
+          state: "active",
+          startDate: null,
+          endDate: null
+        });
+      }
+    }
+    for (const issue of issues) {
+      if (legacyBoardIds.has(issue.id)) {
+        issue.sprintId = `${issue.projectKey}-S1`;
+      }
+    }
+  }
+
+  return { projects, people, sprints, issues };
 }
 
 export function serializeTracker(data: TrackerData): string {

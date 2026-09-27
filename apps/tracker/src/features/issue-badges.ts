@@ -20,7 +20,6 @@ export function typeBadgeVariant(type: IssueType): BadgeVariant {
 
 export function statusBadgeVariant(status: IssueStatus): BadgeVariant {
   switch (status) {
-    case "backlog":
     case "todo":
       return "neutral";
     case "in_progress":

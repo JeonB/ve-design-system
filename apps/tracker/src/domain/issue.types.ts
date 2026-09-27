@@ -1,7 +1,7 @@
 export const ISSUE_TYPES = ["epic", "story", "task", "bug"] as const;
 export type IssueType = (typeof ISSUE_TYPES)[number];
 
-export const ISSUE_STATUSES = ["backlog", "todo", "in_progress", "in_review", "done"] as const;
+export const ISSUE_STATUSES = ["todo", "in_progress", "in_review", "done"] as const;
 export type IssueStatus = (typeof ISSUE_STATUSES)[number];
 
 export const PRIORITIES = ["low", "medium", "high", "urgent"] as const;
@@ -16,6 +16,18 @@ export type Project = {
   key: string;
   name: string;
   description: string;
+};
+
+export const SPRINT_STATES = ["future", "active", "closed"] as const;
+export type SprintState = (typeof SPRINT_STATES)[number];
+
+export type Sprint = {
+  id: string;
+  projectKey: string;
+  name: string;
+  state: SprintState;
+  startDate: string | null;
+  endDate: string | null;
 };
 
 export type Comment = {
@@ -33,7 +45,8 @@ export const ACTIVITY_FIELDS = [
   "status",
   "priority",
   "assignee",
-  "comment"
+  "comment",
+  "sprint"
 ] as const;
 
 export type ActivityField = (typeof ACTIVITY_FIELDS)[number];
@@ -59,6 +72,8 @@ export type Issue = {
   description: string;
   assigneeId: string;
   reporterId: string;
+  sprintId: string | null;
+  rank: number;
   createdAt: string;
   updatedAt: string;
   comments: Comment[];
@@ -68,6 +83,7 @@ export type Issue = {
 export type TrackerData = {
   projects: Project[];
   people: Person[];
+  sprints: Sprint[];
   issues: Issue[];
 };
 
@@ -76,6 +92,7 @@ export type CreateIssueInput = {
   summary: string;
   description: string;
   priority: Priority;
+  sprintId?: string | null;
 };
 
 export type IssuePatch = {
@@ -108,6 +125,10 @@ export function isPriority(value: string): value is Priority {
 
 export function isActivityField(value: string): value is ActivityField {
   return (ACTIVITY_FIELDS as readonly string[]).includes(value);
+}
+
+export function isSprintState(value: string): value is SprintState {
+  return (SPRINT_STATES as readonly string[]).includes(value);
 }
 
 export function validateSummary(summary: string): string | null {

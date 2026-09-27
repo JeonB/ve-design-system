@@ -1,6 +1,7 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { useToast } from "@ve/ui";
 import { addComment, appendIssue, deleteIssue, updateIssue } from "./issues";
+import { assignSprint, completeSprint, createSprint, startSprint } from "./sprints";
 import type { CreateIssueInput, Issue, IssuePatch, TrackerData } from "./issue.types";
 import { CURRENT_ACTOR_ID } from "./seed";
 import { statusLabel } from "./labels";
@@ -12,6 +13,10 @@ type TrackerContextValue = TrackerData & {
   updateIssue: (issueId: string, patch: IssuePatch) => void;
   deleteIssue: (issueId: string) => void;
   addComment: (issueId: string, body: string) => boolean;
+  createSprint: (projectKey: string, name: string) => boolean;
+  startSprint: (sprintId: string) => boolean;
+  completeSprint: (sprintId: string) => void;
+  assignSprint: (issueId: string, sprintId: string | null) => void;
 };
 
 const TrackerContext = createContext<TrackerContextValue | null>(null);
@@ -72,6 +77,50 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     [commit, toast]
   );
 
+  const addSprint = useCallback(
+    (projectKey: string, name: string) => {
+      const result = createSprint(dataRef.current, projectKey, name);
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      toast({ title: `${result.sprint.name} created`, variant: "success" });
+      return true;
+    },
+    [commit, toast]
+  );
+
+  const beginSprint = useCallback(
+    (sprintId: string) => {
+      const result = startSprint(dataRef.current, sprintId, new Date().toISOString());
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      toast({ title: "Sprint started", variant: "success" });
+      return true;
+    },
+    [commit, toast]
+  );
+
+  const finishSprint = useCallback(
+    (sprintId: string) => {
+      commit(completeSprint(dataRef.current, sprintId, new Date().toISOString(), CURRENT_ACTOR_ID));
+      toast({ title: "Sprint completed", variant: "success" });
+    },
+    [commit, toast]
+  );
+
+  const moveToSprint = useCallback(
+    (issueId: string, sprintId: string | null) => {
+      commit(assignSprint(dataRef.current, issueId, sprintId, new Date().toISOString(), CURRENT_ACTOR_ID));
+      toast({ title: sprintId ? "Added to sprint" : "Moved to backlog", variant: "success" });
+    },
+    [commit, toast]
+  );
+
   const value = useMemo(
     () => ({
       ...data,
@@ -79,9 +128,13 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       createIssue,
       updateIssue: update,
       deleteIssue: remove,
-      addComment: comment
+      addComment: comment,
+      createSprint: addSprint,
+      startSprint: beginSprint,
+      completeSprint: finishSprint,
+      assignSprint: moveToSprint
     }),
-    [comment, createIssue, data, remove, update]
+    [addSprint, beginSprint, comment, createIssue, data, finishSprint, moveToSprint, remove, update]
   );
 
   return <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>;

@@ -19,8 +19,6 @@ export function typeLabel(type: IssueType): string {
 
 export function statusLabel(status: IssueStatus): string {
   switch (status) {
-    case "backlog":
-      return "Backlog";
     case "todo":
       return "To do";
     case "in_progress":

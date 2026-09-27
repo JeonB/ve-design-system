@@ -59,6 +59,8 @@ export function appendIssue(
     description: input.description.trim(),
     assigneeId: actorId,
     reporterId: actorId,
+    sprintId: input.sprintId ?? null,
+    rank: number,
     createdAt: now,
     updatedAt: now,
     comments: [],
