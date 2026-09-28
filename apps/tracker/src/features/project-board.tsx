@@ -1,6 +1,8 @@
-import { Alert, Badge, Stack } from "@ve/ui";
+import { useState } from "react";
+import { Alert, Badge, Field, Input, Stack, Switch } from "@ve/ui";
 import { Link } from "react-router";
-import { ISSUE_STATUSES } from "../domain/issue.types";
+import { matchesQuickFilter } from "../domain/issues";
+import { ISSUE_STATUSES, isIssueStatus, type IssueStatus } from "../domain/issue.types";
 import { statusLabel } from "../domain/labels";
 import { activeSprint, issuesInSprint } from "../domain/sprints";
 import { useTracker } from "../domain/tracker-context";
@@ -13,6 +15,9 @@ type ProjectBoardProps = {
 
 export function ProjectBoard({ projectKey }: ProjectBoardProps) {
   const data = useTracker();
+  const [query, setQuery] = useState("");
+  const [onlyMine, setOnlyMine] = useState(false);
+  const [dropStatus, setDropStatus] = useState<IssueStatus | null>(null);
   const sprint = activeSprint(data, projectKey);
   if (!sprint) {
     return (
@@ -22,15 +27,43 @@ export function ProjectBoard({ projectKey }: ProjectBoardProps) {
     );
   }
   const issues = issuesInSprint(data, sprint.id);
+  const visible = issues.filter((issue) => matchesQuickFilter(issue, query, onlyMine ? data.actorId : null));
 
   return (
     <Stack gap="sm">
-      <p>{sprint.name}</p>
+      <Stack direction="horizontal" align="center" justify="between">
+        <p>{sprint.name}</p>
+        <Stack direction="horizontal" align="center" gap="sm">
+          <Field>
+            <Field.Label>Filter</Field.Label>
+            <Input name="board-query" value={query} onChange={(event) => setQuery(event.target.value)} />
+          </Field>
+          <Switch aria-label="Only my issues" checked={onlyMine} onCheckedChange={setOnlyMine} />
+        </Stack>
+      </Stack>
     <div className={board}>
       {ISSUE_STATUSES.map((status) => {
-        const columnIssues = issues.filter((issue) => issue.status === status);
+        const columnIssues = visible.filter((issue) => issue.status === status);
         return (
-          <section key={status} className={column}>
+          <section
+            key={status}
+            className={column}
+            data-drop={dropStatus === status ? "true" : undefined}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setDropStatus(status);
+            }}
+            onDragLeave={() => setDropStatus((current) => (current === status ? null : current))}
+            onDrop={(event) => {
+              event.preventDefault();
+              setDropStatus(null);
+              const issueId = event.dataTransfer.getData("text/plain");
+              if (!isIssueStatus(status) || issueId.length === 0) {
+                return;
+              }
+              data.updateIssue(issueId, { status });
+            }}
+          >
             <Stack direction="horizontal" align="center" justify="between">
               <strong>{statusLabel(status)}</strong>
               <Badge size="sm">{columnIssues.length}</Badge>

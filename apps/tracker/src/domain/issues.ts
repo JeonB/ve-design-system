@@ -210,6 +210,17 @@ export function addComment(
   };
 }
 
+export function matchesQuickFilter(issue: Issue, query: string, onlyAssigneeId: string | null): boolean {
+  if (onlyAssigneeId && issue.assigneeId !== onlyAssigneeId) {
+    return false;
+  }
+  const needle = query.trim().toLowerCase();
+  if (needle.length === 0) {
+    return true;
+  }
+  return issue.summary.toLowerCase().includes(needle) || issue.key.toLowerCase().includes(needle);
+}
+
 export function filterIssues(issues: Issue[], filter: IssueFilter): Issue[] {
   const query = filter.query.trim().toLowerCase();
 

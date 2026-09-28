@@ -15,7 +15,14 @@ export function IssueCard({ issue, data, onStatusChange }: IssueCardProps) {
   const assignee = personById(data, issue.assigneeId);
 
   return (
-    <Card padding="sm">
+    <Card
+      draggable
+      padding="sm"
+      onDragStart={(event) => {
+        event.dataTransfer.setData("text/plain", issue.id);
+        event.dataTransfer.effectAllowed = "move";
+      }}
+    >
       <Stack gap="sm">
         <Stack direction="horizontal" gap="sm" justify="between" align="center">
           <Badge size="sm" variant={typeBadgeVariant(issue.type)}>

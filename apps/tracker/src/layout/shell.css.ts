@@ -58,7 +58,14 @@ export const column = style({
   display: "flex",
   flexDirection: "column",
   gap: vars.space.x2,
-  minWidth: "200px"
+  minWidth: "200px",
+  minHeight: "8rem",
+  borderRadius: vars.radius.md,
+  selectors: {
+    "&[data-drop='true']": {
+      outline: `2px solid ${vars.color.ring}`
+    }
+  }
 });
 
 export const detail = style({

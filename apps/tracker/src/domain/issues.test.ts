@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appendIssue, filterIssues, issuesByProject, updateIssue } from "./issues";
+import { appendIssue, filterIssues, issuesByProject, matchesQuickFilter, updateIssue } from "./issues";
 import { seedTracker } from "./seed";
 
 describe("issues", () => {
@@ -45,5 +45,11 @@ describe("issues", () => {
     });
 
     expect(filtered.map((issue) => issue.key)).toEqual(["WEB-1"]);
+  });
+
+  it("보드 빠른 필터는 담당자와 키를 함께 본다", () => {
+    const web = issuesByProject(seedTracker(), "WEB");
+    const mine = web.filter((issue) => matchesQuickFilter(issue, "web-2", "min"));
+    expect(mine.map((issue) => issue.key)).toEqual(["WEB-2"]);
   });
 });
