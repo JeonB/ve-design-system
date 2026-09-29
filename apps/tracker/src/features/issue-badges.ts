@@ -10,6 +10,7 @@ export function typeBadgeVariant(type: IssueType): BadgeVariant {
     case "epic":
       return "outline";
     case "task":
+    case "subtask":
       return "neutral";
     default: {
       const exhaustive: never = type;

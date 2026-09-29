@@ -47,6 +47,27 @@ describe("issues", () => {
     expect(filtered.map((issue) => issue.key)).toEqual(["WEB-1"]);
   });
 
+  it("라벨 변경은 활동에 남는다", () => {
+    const next = updateIssue(seedTracker(), "WEB-1", { labels: ["pricing", "web"] }, "2026-09-29T09:00:00.000Z", "ada");
+    expect(next.issues.find((issue) => issue.id === "WEB-1")?.activity.at(-1)).toMatchObject({
+      field: "labels",
+      to: "pricing, web"
+    });
+  });
+
+  it("하위 작업은 부모 이슈에 연결된다", () => {
+    const data = seedTracker();
+    const result = appendIssue(
+      data,
+      "WEB",
+      { type: "subtask", summary: "Crop hero", description: "", priority: "medium", parentId: "WEB-1", sprintId: "WEB-S1" },
+      "2026-09-29T09:00:00.000Z",
+      "ada"
+    );
+    expect(result.issue.parentId).toBe("WEB-1");
+    expect(result.issue.key).toBe("WEB-6");
+  });
+
   it("보드 빠른 필터는 담당자와 키를 함께 본다", () => {
     const web = issuesByProject(seedTracker(), "WEB");
     const mine = web.filter((issue) => matchesQuickFilter(issue, "web-2", "min"));

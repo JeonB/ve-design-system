@@ -10,6 +10,8 @@ export function typeLabel(type: IssueType): string {
       return "Task";
     case "bug":
       return "Bug";
+    case "subtask":
+      return "Subtask";
     default: {
       const exhaustive: never = type;
       return exhaustive;

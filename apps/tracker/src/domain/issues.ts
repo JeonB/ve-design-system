@@ -22,6 +22,10 @@ export function issueById(data: TrackerData, issueId: string): Issue | undefined
   return data.issues.find((issue) => issue.id === issueId);
 }
 
+export function childIssues(data: TrackerData, parentId: string): Issue[] {
+  return data.issues.filter((issue) => issue.parentId === parentId);
+}
+
 export function issuesByProject(data: TrackerData, projectKey: string): Issue[] {
   return data.issues.filter((issue) => issue.projectKey === projectKey);
 }
@@ -61,6 +65,9 @@ export function appendIssue(
     reporterId: actorId,
     sprintId: input.sprintId ?? null,
     rank: number,
+    labels: [],
+    storyPoints: null,
+    parentId: input.parentId ?? null,
     createdAt: now,
     updatedAt: now,
     comments: [],
@@ -88,12 +95,32 @@ const PATCH_FIELDS: Array<{ key: keyof IssuePatch; field: ActivityField }> = [
   { key: "type", field: "type" },
   { key: "status", field: "status" },
   { key: "priority", field: "priority" },
-  { key: "assigneeId", field: "assignee" }
+  { key: "assigneeId", field: "assignee" },
+  { key: "labels", field: "labels" },
+  { key: "storyPoints", field: "points" },
+  { key: "parentId", field: "parent" }
 ];
 
 function readPatchValue(issue: Issue, key: keyof IssuePatch): string {
-  const value = issue[key];
-  return value === undefined ? "" : String(value);
+  switch (key) {
+    case "labels":
+      return issue.labels.join(", ");
+    case "storyPoints":
+      return issue.storyPoints === null ? "" : String(issue.storyPoints);
+    case "parentId":
+      return issue.parentId ?? "";
+    case "summary":
+    case "description":
+    case "type":
+    case "status":
+    case "priority":
+    case "assigneeId":
+      return String(issue[key] ?? "");
+    default: {
+      const exhaustive: never = key;
+      return exhaustive;
+    }
+  }
 }
 
 function nextActivity(issue: Issue, entry: Omit<ActivityEntry, "id">, offset = 1): ActivityEntry {

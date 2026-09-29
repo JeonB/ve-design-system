@@ -1,4 +1,4 @@
-export const ISSUE_TYPES = ["epic", "story", "task", "bug"] as const;
+export const ISSUE_TYPES = ["epic", "story", "task", "bug", "subtask"] as const;
 export type IssueType = (typeof ISSUE_TYPES)[number];
 
 export const ISSUE_STATUSES = ["todo", "in_progress", "in_review", "done"] as const;
@@ -46,7 +46,10 @@ export const ACTIVITY_FIELDS = [
   "priority",
   "assignee",
   "comment",
-  "sprint"
+  "sprint",
+  "labels",
+  "points",
+  "parent"
 ] as const;
 
 export type ActivityField = (typeof ACTIVITY_FIELDS)[number];
@@ -74,6 +77,9 @@ export type Issue = {
   reporterId: string;
   sprintId: string | null;
   rank: number;
+  labels: string[];
+  storyPoints: number | null;
+  parentId: string | null;
   createdAt: string;
   updatedAt: string;
   comments: Comment[];
@@ -93,6 +99,7 @@ export type CreateIssueInput = {
   description: string;
   priority: Priority;
   sprintId?: string | null;
+  parentId?: string | null;
 };
 
 export type IssuePatch = {
@@ -102,6 +109,9 @@ export type IssuePatch = {
   status?: IssueStatus;
   priority?: Priority;
   assigneeId?: string;
+  labels?: string[];
+  storyPoints?: number | null;
+  parentId?: string | null;
 };
 
 export type IssueFilter = {

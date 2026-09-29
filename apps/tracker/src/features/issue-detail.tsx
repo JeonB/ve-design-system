@@ -13,7 +13,7 @@ import {
 } from "@ve/ui";
 import { Link, useNavigate } from "react-router";
 import { formatActivity } from "../domain/activity-text";
-import { issueById, personById } from "../domain/issues";
+import { childIssues, issueById, personById } from "../domain/issues";
 import { validateSummary } from "../domain/issue.types";
 import { useTracker } from "../domain/tracker-context";
 import { detail, narrowOnly, sidePanel } from "../layout/shell.css";
@@ -36,10 +36,13 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
           type: issue.type,
           status: issue.status,
           priority: issue.priority,
-          assigneeId: issue.assigneeId
+          assigneeId: issue.assigneeId,
+          labels: issue.labels.join(", "),
+          storyPoints: issue.storyPoints === null ? "" : String(issue.storyPoints)
         }
       : null
   );
+  const [subtask, setSubtask] = useState("");
   const [comment, setComment] = useState("");
   const [commentError, setCommentError] = useState<string | null>(null);
   const [fieldsOpen, setFieldsOpen] = useState(false);
@@ -63,14 +66,37 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
       setSummaryError(error);
       return;
     }
+    const pointsText = currentFields.storyPoints.trim();
+    const points = Number(pointsText);
     data.updateIssue(currentIssue.id, {
       summary,
       description,
       type: currentFields.type,
       status: currentFields.status,
       priority: currentFields.priority,
-      assigneeId: currentFields.assigneeId
+      assigneeId: currentFields.assigneeId,
+      labels: currentFields.labels
+        .split(",")
+        .map((label) => label.trim())
+        .filter((label) => label.length > 0),
+      storyPoints: pointsText.length === 0 || !Number.isFinite(points) ? null : points
     });
+  };
+
+  const addSubtask = () => {
+    const error = validateSummary(subtask);
+    if (error) {
+      return;
+    }
+    data.createIssue(currentIssue.projectKey, {
+      type: "subtask",
+      summary: subtask,
+      description: "",
+      priority: currentIssue.priority,
+      sprintId: currentIssue.sprintId,
+      parentId: currentIssue.id
+    });
+    setSubtask("");
   };
 
   const submitComment = () => {
@@ -137,6 +163,23 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
                 Fields
               </Button>
             </span>
+          </Stack>
+          <Separator />
+          <Stack gap="sm">
+            <strong>Subtasks</strong>
+            {childIssues(data, currentIssue.id).length === 0 ? <p>No subtasks.</p> : null}
+            {childIssues(data, currentIssue.id).map((child) => (
+              <Link key={child.id} to={`/p/${currentIssue.projectKey}/issues/${child.id}`}>
+                {child.key} {child.summary}
+              </Link>
+            ))}
+            <Field>
+              <Field.Label>New subtask</Field.Label>
+              <Input name="subtask" value={subtask} onChange={(event) => setSubtask(event.target.value)} />
+            </Field>
+            <Button type="button" variant="outline" onClick={addSubtask}>
+              Add subtask
+            </Button>
           </Stack>
           <Separator />
           <Stack gap="sm">

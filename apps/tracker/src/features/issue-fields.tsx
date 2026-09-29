@@ -1,4 +1,4 @@
-import { Field, Select, Stack } from "@ve/ui";
+import { Field, Input, Select, Stack } from "@ve/ui";
 import {
   ISSUE_STATUSES,
   ISSUE_TYPES,
@@ -18,6 +18,8 @@ export type IssueFieldValues = {
   status: IssueStatus;
   priority: Priority;
   assigneeId: string;
+  labels: string;
+  storyPoints: string;
 };
 
 type IssueFieldsProps = {
@@ -85,6 +87,23 @@ export function IssueFields({ values, people, onChange }: IssueFieldsProps) {
             </option>
           ))}
         </Select>
+      </Field>
+      <Field>
+        <Field.Label>Labels</Field.Label>
+        <Input
+          name="labels"
+          value={values.labels}
+          onChange={(event) => onChange({ labels: event.target.value })}
+        />
+      </Field>
+      <Field>
+        <Field.Label>Story points</Field.Label>
+        <Input
+          inputMode="decimal"
+          name="storyPoints"
+          value={values.storyPoints}
+          onChange={(event) => onChange({ storyPoints: event.target.value })}
+        />
       </Field>
       <Field>
         <Field.Label>Assignee</Field.Label>

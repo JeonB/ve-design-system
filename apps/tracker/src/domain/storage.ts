@@ -67,6 +67,26 @@ type ReadIssue = {
   legacyOnBoard: boolean;
 };
 
+function readLabels(value: unknown): string[] | null {
+  if (value === undefined) {
+    return [];
+  }
+  if (!Array.isArray(value) || !value.every((item) => isString(item))) {
+    return null;
+  }
+  return value;
+}
+
+function readPoints(value: unknown): number | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (typeof value === "number" && Number.isFinite(value)) {
+    return value;
+  }
+  return Number.NaN;
+}
+
 function readIssue(value: unknown): ReadIssue | null {
   if (!isRecord(value)) {
     return null;
@@ -116,6 +136,17 @@ function readIssue(value: unknown): ReadIssue | null {
     }
   }
 
+  const labels = readLabels(value.labels);
+  const storyPoints = readPoints(value.storyPoints);
+  if (labels === null) {
+    return null;
+  }
+  if (Number.isNaN(storyPoints)) {
+    return null;
+  }
+  if (value.parentId !== undefined && value.parentId !== null && !isString(value.parentId)) {
+    return null;
+  }
   const legacyOnBoard = value.sprintId === undefined && value.status !== "backlog";
   const sprintId = isString(value.sprintId) || value.sprintId === null ? value.sprintId : null;
   const rank = typeof value.rank === "number" ? value.rank : value.number;
@@ -139,6 +170,9 @@ function readIssue(value: unknown): ReadIssue | null {
       reporterId: value.reporterId,
       sprintId: value.status === "backlog" ? null : sprintId,
       rank,
+      labels,
+      storyPoints,
+      parentId: value.parentId === undefined || value.parentId === null ? null : isString(value.parentId) ? value.parentId : null,
       createdAt: value.createdAt,
       updatedAt: value.updatedAt,
       comments,

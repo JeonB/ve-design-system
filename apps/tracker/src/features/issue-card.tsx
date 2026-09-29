@@ -37,7 +37,11 @@ export function IssueCard({ issue, data, onStatusChange }: IssueCardProps) {
             <Link to={`/p/${issue.projectKey}/issues/${issue.id}`}>{issue.summary}</Link>
           </Button>
         </Card.Title>
-        <Card.Description>{issue.key}</Card.Description>
+        <Card.Description>
+          {issue.key}
+          {issue.storyPoints === null ? "" : ` · ${issue.storyPoints} pts`}
+          {issue.labels.length > 0 ? ` · ${issue.labels.join(", ")}` : ""}
+        </Card.Description>
         <Select
           aria-label={`${issue.key} status`}
           name={`status-${issue.id}`}

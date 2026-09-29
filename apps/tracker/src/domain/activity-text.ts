@@ -24,6 +24,9 @@ function fieldValue(field: ActivityEntry["field"], value: string, people: Person
     case "description":
     case "comment":
     case "sprint":
+    case "labels":
+    case "points":
+    case "parent":
       return value;
     default: {
       const exhaustive: never = field;
@@ -45,6 +48,9 @@ export function formatActivity(entry: ActivityEntry, people: Person[]): string {
     case "priority":
     case "assignee":
     case "sprint":
+    case "labels":
+    case "points":
+    case "parent":
       return `${entry.field} ${fieldValue(entry.field, entry.from, people)} → ${fieldValue(entry.field, entry.to, people)}`;
     default: {
       const exhaustive: never = entry.field;

@@ -2,7 +2,7 @@ import type { Issue, TrackerData } from "./issue.types";
 
 export const CURRENT_ACTOR_ID = "ada";
 
-type DraftIssue = Omit<Issue, "activity" | "sprintId" | "rank">;
+type DraftIssue = Omit<Issue, "activity" | "sprintId" | "rank" | "labels" | "storyPoints" | "parentId">;
 
 function draftTracker(): { projects: TrackerData["projects"]; people: TrackerData["people"]; issues: DraftIssue[] } {
   return {
@@ -174,7 +174,10 @@ export function seedTracker(): TrackerData {
       ...issue,
       activity: [],
       sprintId: issue.id === "WEB-4" ? null : `${issue.projectKey}-S1`,
-      rank: issue.number
+      rank: issue.number,
+      labels: issue.id === "WEB-1" ? ["pricing"] : [],
+      storyPoints: issue.id === "WEB-1" ? 5 : issue.id === "WEB-2" ? 2 : null,
+      parentId: null
     }))
   };
 }
