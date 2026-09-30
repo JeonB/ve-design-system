@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { useToast } from "@ve/ui";
+import { deleteFilter, saveFilter, type SaveFilterInput } from "./filters";
 import { addComment, appendIssue, deleteIssue, updateIssue } from "./issues";
 import { assignSprint, completeSprint, createSprint, startSprint } from "./sprints";
 import type { CreateIssueInput, Issue, IssuePatch, TrackerData } from "./issue.types";
@@ -17,6 +18,8 @@ type TrackerContextValue = TrackerData & {
   startSprint: (sprintId: string) => boolean;
   completeSprint: (sprintId: string) => void;
   assignSprint: (issueId: string, sprintId: string | null) => void;
+  saveFilter: (input: SaveFilterInput) => boolean;
+  deleteFilter: (filterId: string) => void;
 };
 
 const TrackerContext = createContext<TrackerContextValue | null>(null);
@@ -121,6 +124,28 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     [commit, toast]
   );
 
+  const storeFilter = useCallback(
+    (input: SaveFilterInput) => {
+      const result = saveFilter(dataRef.current, input);
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      toast({ title: `${result.filter.name} saved`, variant: "success" });
+      return true;
+    },
+    [commit, toast]
+  );
+
+  const removeFilter = useCallback(
+    (filterId: string) => {
+      commit(deleteFilter(dataRef.current, filterId));
+      toast({ title: "Filter removed", variant: "neutral" });
+    },
+    [commit]
+  );
+
   const value = useMemo(
     () => ({
       ...data,
@@ -132,9 +157,11 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       createSprint: addSprint,
       startSprint: beginSprint,
       completeSprint: finishSprint,
-      assignSprint: moveToSprint
+      assignSprint: moveToSprint,
+      saveFilter: storeFilter,
+      deleteFilter: removeFilter
     }),
-    [addSprint, beginSprint, comment, createIssue, data, finishSprint, moveToSprint, remove, update]
+    [addSprint, beginSprint, comment, createIssue, data, finishSprint, moveToSprint, remove, removeFilter, storeFilter, update]
   );
 
   return <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>;

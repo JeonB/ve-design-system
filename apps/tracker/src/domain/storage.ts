@@ -9,6 +9,7 @@ import {
   type Issue,
   type Person,
   type Project,
+  type SavedFilter,
   type Sprint,
   type TrackerData
 } from "./issue.types";
@@ -211,6 +212,46 @@ function readProject(value: unknown): Project | null {
   return { key: value.key, name: value.name, description: value.description };
 }
 
+function readChoice<T extends string>(value: unknown, guard: (item: string) => item is T): T | "all" | null {
+  if (value === "all") {
+    return "all";
+  }
+  if (isString(value) && guard(value)) {
+    return value;
+  }
+  return null;
+}
+
+function readSavedFilter(value: unknown): SavedFilter | null {
+  if (
+    !isRecord(value) ||
+    !isString(value.id) ||
+    !isString(value.projectKey) ||
+    !isString(value.name) ||
+    !isString(value.query) ||
+    !isString(value.assigneeId)
+  ) {
+    return null;
+  }
+  const type = readChoice(value.type, isIssueType);
+  const status = readChoice(value.status, isIssueStatus);
+  if (type === null || status === null) {
+    return null;
+  }
+  if (value.assigneeId !== "all" && value.assigneeId.length === 0) {
+    return null;
+  }
+  return {
+    id: value.id,
+    projectKey: value.projectKey,
+    name: value.name,
+    query: value.query,
+    type,
+    status,
+    assigneeId: value.assigneeId
+  };
+}
+
 function readPerson(value: unknown): Person | null {
   if (!isRecord(value) || !isString(value.id) || !isString(value.name)) {
     return null;
@@ -299,7 +340,21 @@ export function parseTracker(raw: string): TrackerData | null {
     }
   }
 
-  return { projects, people, sprints, issues };
+  const savedFilters: SavedFilter[] = [];
+  if (data.savedFilters !== undefined) {
+    if (!Array.isArray(data.savedFilters)) {
+      return null;
+    }
+    for (const item of data.savedFilters) {
+      const filter = readSavedFilter(item);
+      if (!filter) {
+        return null;
+      }
+      savedFilters.push(filter);
+    }
+  }
+
+  return { projects, people, sprints, issues, savedFilters };
 }
 
 export function serializeTracker(data: TrackerData): string {

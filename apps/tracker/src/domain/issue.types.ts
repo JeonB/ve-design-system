@@ -86,11 +86,22 @@ export type Issue = {
   activity: ActivityEntry[];
 };
 
+export type SavedFilter = {
+  id: string;
+  projectKey: string;
+  name: string;
+  query: string;
+  type: IssueType | "all";
+  status: IssueStatus | "all";
+  assigneeId: string | "all";
+};
+
 export type TrackerData = {
   projects: Project[];
   people: Person[];
   sprints: Sprint[];
   issues: Issue[];
+  savedFilters: SavedFilter[];
 };
 
 export type CreateIssueInput = {

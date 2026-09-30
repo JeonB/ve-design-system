@@ -178,6 +178,7 @@ export function seedTracker(): TrackerData {
       labels: issue.id === "WEB-1" ? ["pricing"] : [],
       storyPoints: issue.id === "WEB-1" ? 5 : issue.id === "WEB-2" ? 2 : null,
       parentId: null
-    }))
+    })),
+    savedFilters: []
   };
 }

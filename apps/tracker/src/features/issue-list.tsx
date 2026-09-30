@@ -8,7 +8,8 @@ import {
   isIssueStatus,
   isIssueType,
   type IssueStatus,
-  type IssueType
+  type IssueType,
+  type SavedFilter
 } from "../domain/issue.types";
 import { statusLabel, typeLabel } from "../domain/labels";
 import { useTracker } from "../domain/tracker-context";
@@ -25,6 +26,8 @@ export function IssueList({ projectKey }: IssueListProps) {
   const [type, setType] = useState<IssueType | "all">("all");
   const [status, setStatus] = useState<IssueStatus | "all">("all");
   const [assigneeId, setAssigneeId] = useState("all");
+  const [filterName, setFilterName] = useState("");
+  const saved = data.savedFilters.filter((filter) => filter.projectKey === projectKey);
   const issues = filterIssues(issuesByProject(data, projectKey), {
     query,
     type,
@@ -32,11 +35,32 @@ export function IssueList({ projectKey }: IssueListProps) {
     assigneeId
   });
 
+  const applyFilter = (filter: SavedFilter) => {
+    setQuery(filter.query);
+    setType(filter.type);
+    setStatus(filter.status);
+    setAssigneeId(filter.assigneeId);
+  };
+
+  const storeFilter = () => {
+    const savedFilter = data.saveFilter({
+      projectKey,
+      name: filterName,
+      query,
+      type,
+      status,
+      assigneeId
+    });
+    if (savedFilter) {
+      setFilterName("");
+    }
+  };
+
   return (
     <Stack gap="md">
       <div className={filterBar}>
         <Field>
-          <Field.Label>Summary</Field.Label>
+          <Field.Label>Search</Field.Label>
           <Input name="query" value={query} onChange={(event) => setQuery(event.target.value)} />
         </Field>
         <Field>
@@ -91,6 +115,25 @@ export function IssueList({ projectKey }: IssueListProps) {
           </Select>
         </Field>
       </div>
+      <Stack direction="horizontal" gap="sm" align="center">
+        <Field>
+          <Field.Label>Save filter</Field.Label>
+          <Input name="filter-name" value={filterName} onChange={(event) => setFilterName(event.target.value)} />
+        </Field>
+        <Button type="button" variant="outline" onClick={storeFilter}>
+          Save
+        </Button>
+        {saved.map((filter) => (
+          <Stack key={filter.id} direction="horizontal" gap="sm" align="center">
+            <Button type="button" size="sm" variant="secondary" onClick={() => applyFilter(filter)}>
+              {filter.name}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" aria-label={`Delete ${filter.name}`} onClick={() => data.deleteFilter(filter.id)}>
+              Delete
+            </Button>
+          </Stack>
+        ))}
+      </Stack>
       {issues.length === 0 ? (
         <Alert title="No issues" variant="neutral">
           Nothing matches this filter.

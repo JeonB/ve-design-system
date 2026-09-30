@@ -265,7 +265,11 @@ export function filterIssues(issues: Issue[], filter: IssueFilter): Issue[] {
       if (query.length === 0) {
         return true;
       }
-      return issue.summary.toLowerCase().includes(query);
+      return (
+        issue.summary.toLowerCase().includes(query) ||
+        issue.key.toLowerCase().includes(query) ||
+        issue.labels.some((label) => label.toLowerCase().includes(query))
+      );
     })
     .sort((left, right) => {
       if (left.updatedAt === right.updatedAt) {
