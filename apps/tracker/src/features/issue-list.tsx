@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Alert, Badge, Button, Card, Field, Input, Select, Stack } from "@ve/ui";
 import { Link } from "react-router";
 import { filterIssues, issuesByProject, personById } from "../domain/issues";
+import { evaluateJql } from "../domain/jql";
 import {
   ISSUE_STATUSES,
   ISSUE_TYPES,
@@ -27,19 +28,29 @@ export function IssueList({ projectKey }: IssueListProps) {
   const [status, setStatus] = useState<IssueStatus | "all">("all");
   const [assigneeId, setAssigneeId] = useState("all");
   const [filterName, setFilterName] = useState("");
+  const [jql, setJql] = useState("");
   const saved = data.savedFilters.filter((filter) => filter.projectKey === projectKey);
-  const issues = filterIssues(issuesByProject(data, projectKey), {
-    query,
-    type,
-    status,
-    assigneeId
-  });
+  const jqlText = jql.trim();
+  const jqlResult = jqlText.length === 0 ? null : evaluateJql(data, jqlText, data.actorId);
+  const jqlError = jqlResult && "error" in jqlResult ? jqlResult.error : null;
+  const issues =
+    jqlResult && !("error" in jqlResult)
+      ? jqlResult.issues.filter((issue) => issue.projectKey === projectKey)
+      : jqlError
+        ? []
+        : filterIssues(issuesByProject(data, projectKey), {
+            query,
+            type,
+            status,
+            assigneeId
+          });
 
   const applyFilter = (filter: SavedFilter) => {
     setQuery(filter.query);
     setType(filter.type);
     setStatus(filter.status);
     setAssigneeId(filter.assigneeId);
+    setJql(filter.jql);
   };
 
   const storeFilter = () => {
@@ -49,7 +60,8 @@ export function IssueList({ projectKey }: IssueListProps) {
       query,
       type,
       status,
-      assigneeId
+      assigneeId,
+      jql
     });
     if (savedFilter) {
       setFilterName("");
@@ -115,6 +127,20 @@ export function IssueList({ projectKey }: IssueListProps) {
           </Select>
         </Field>
       </div>
+      <Field>
+        <Field.Label>JQL</Field.Label>
+        <Input
+          name="jql"
+          placeholder='status = "In progress" AND assignee = currentUser()'
+          value={jql}
+          onChange={(event) => setJql(event.target.value)}
+        />
+      </Field>
+      {jqlError ? (
+        <Alert title="JQL" variant="danger">
+          {jqlError}
+        </Alert>
+      ) : null}
       <Stack direction="horizontal" gap="sm" align="center">
         <Field>
           <Field.Label>Save filter</Field.Label>

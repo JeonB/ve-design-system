@@ -94,6 +94,7 @@ export type SavedFilter = {
   type: IssueType | "all";
   status: IssueStatus | "all";
   assigneeId: string | "all";
+  jql: string;
 };
 
 export type TrackerData = {

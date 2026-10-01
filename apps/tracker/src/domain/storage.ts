@@ -241,6 +241,9 @@ function readSavedFilter(value: unknown): SavedFilter | null {
   if (value.assigneeId !== "all" && value.assigneeId.length === 0) {
     return null;
   }
+  if (value.jql !== undefined && !isString(value.jql)) {
+    return null;
+  }
   return {
     id: value.id,
     projectKey: value.projectKey,
@@ -248,7 +251,8 @@ function readSavedFilter(value: unknown): SavedFilter | null {
     query: value.query,
     type,
     status,
-    assigneeId: value.assigneeId
+    assigneeId: value.assigneeId,
+    jql: isString(value.jql) ? value.jql : ""
   };
 }
 

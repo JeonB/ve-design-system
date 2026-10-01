@@ -22,7 +22,8 @@ describe("saved filters", () => {
       query: "pricing",
       type: "all",
       status: "all",
-      assigneeId: "all"
+      assigneeId: "all",
+      jql: ""
     });
     expect(result).toEqual({ error: "Filter name is required." });
   });
@@ -34,7 +35,8 @@ describe("saved filters", () => {
       query: "pricing",
       type: "story",
       status: "all",
-      assigneeId: "ada"
+      assigneeId: "ada",
+      jql: "labels = pricing"
     });
     if ("error" in saved) {
       throw new Error(saved.error);
