@@ -68,6 +68,7 @@ export function appendIssue(
     labels: [],
     storyPoints: null,
     parentId: input.parentId ?? null,
+    attachments: [],
     createdAt: now,
     updatedAt: now,
     comments: [],

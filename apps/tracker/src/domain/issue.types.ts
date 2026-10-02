@@ -30,6 +30,16 @@ export type Sprint = {
   endDate: string | null;
 };
 
+export type Attachment = {
+  id: string;
+  name: string;
+  mediaType: string;
+  size: number;
+  dataUrl: string;
+  authorId: string;
+  createdAt: string;
+};
+
 export type Comment = {
   id: string;
   authorId: string;
@@ -49,7 +59,8 @@ export const ACTIVITY_FIELDS = [
   "sprint",
   "labels",
   "points",
-  "parent"
+  "parent",
+  "attachment"
 ] as const;
 
 export type ActivityField = (typeof ACTIVITY_FIELDS)[number];
@@ -83,6 +94,7 @@ export type Issue = {
   createdAt: string;
   updatedAt: string;
   comments: Comment[];
+  attachments: Attachment[];
   activity: ActivityEntry[];
 };
 

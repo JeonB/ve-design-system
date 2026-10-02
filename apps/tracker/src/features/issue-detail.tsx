@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, type ChangeEvent } from "react";
 import {
   Alert,
   Avatar,
@@ -83,6 +83,27 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
     });
   };
 
+  const onFile = (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) {
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      if (typeof reader.result !== "string") {
+        return;
+      }
+      data.addAttachment(currentIssue.id, {
+        name: file.name,
+        mediaType: file.type,
+        size: file.size,
+        dataUrl: reader.result
+      });
+    };
+    reader.readAsDataURL(file);
+  };
+
   const addSubtask = () => {
     const error = validateSummary(subtask);
     if (error) {
@@ -163,6 +184,26 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
                 Fields
               </Button>
             </span>
+          </Stack>
+          <Separator />
+          <Stack gap="sm">
+            <strong>Attachments</strong>
+            {currentIssue.attachments.length === 0 ? <p>No files.</p> : null}
+            {currentIssue.attachments.map((file) => (
+              <Stack key={file.id} direction="horizontal" gap="sm" align="center">
+                <a download={file.name} href={file.dataUrl}>
+                  {file.name}
+                </a>
+                <span>{file.size} B</span>
+                <Button type="button" size="sm" variant="ghost" onClick={() => data.removeAttachment(currentIssue.id, file.id)}>
+                  Remove
+                </Button>
+              </Stack>
+            ))}
+            <Field>
+              <Field.Label>Add file</Field.Label>
+              <Input accept="image/*,.txt,.md,.pdf" name="attachment" type="file" onChange={onFile} />
+            </Field>
           </Stack>
           <Separator />
           <Stack gap="sm">

@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
 import { useToast } from "@ve/ui";
+import { addAttachment, removeAttachment, type AttachmentInput } from "./attachments";
 import { deleteFilter, saveFilter, type SaveFilterInput } from "./filters";
 import { addComment, appendIssue, deleteIssue, updateIssue } from "./issues";
 import { assignSprint, completeSprint, createSprint, startSprint } from "./sprints";
@@ -20,6 +21,8 @@ type TrackerContextValue = TrackerData & {
   assignSprint: (issueId: string, sprintId: string | null) => void;
   saveFilter: (input: SaveFilterInput) => boolean;
   deleteFilter: (filterId: string) => void;
+  addAttachment: (issueId: string, input: AttachmentInput) => boolean;
+  removeAttachment: (issueId: string, attachmentId: string) => void;
 };
 
 const TrackerContext = createContext<TrackerContextValue | null>(null);
@@ -146,6 +149,28 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     [commit]
   );
 
+  const attach = useCallback(
+    (issueId: string, input: AttachmentInput) => {
+      const result = addAttachment(dataRef.current, issueId, input, new Date().toISOString(), CURRENT_ACTOR_ID);
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      toast({ title: `${result.attachment.name} attached`, variant: "success" });
+      return true;
+    },
+    [commit, toast]
+  );
+
+  const detach = useCallback(
+    (issueId: string, attachmentId: string) => {
+      commit(removeAttachment(dataRef.current, issueId, attachmentId, new Date().toISOString(), CURRENT_ACTOR_ID));
+      toast({ title: "Attachment removed", variant: "neutral" });
+    },
+    [commit]
+  );
+
   const value = useMemo(
     () => ({
       ...data,
@@ -159,9 +184,11 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       completeSprint: finishSprint,
       assignSprint: moveToSprint,
       saveFilter: storeFilter,
-      deleteFilter: removeFilter
+      deleteFilter: removeFilter,
+      addAttachment: attach,
+      removeAttachment: detach
     }),
-    [addSprint, beginSprint, comment, createIssue, data, finishSprint, moveToSprint, remove, removeFilter, storeFilter, update]
+    [addSprint, attach, beginSprint, comment, createIssue, data, detach, finishSprint, moveToSprint, remove, removeFilter, storeFilter, update]
   );
 
   return <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>;

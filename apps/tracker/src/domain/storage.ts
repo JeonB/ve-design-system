@@ -5,6 +5,7 @@ import {
   isPriority,
   isSprintState,
   type ActivityEntry,
+  type Attachment,
   type Comment,
   type Issue,
   type Person,
@@ -26,6 +27,31 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isString(value: unknown): value is string {
   return typeof value === "string";
+}
+
+function readAttachment(value: unknown): Attachment | null {
+  if (
+    !isRecord(value) ||
+    !isString(value.id) ||
+    !isString(value.name) ||
+    !isString(value.mediaType) ||
+    !isString(value.dataUrl) ||
+    !isString(value.authorId) ||
+    !isString(value.createdAt) ||
+    typeof value.size !== "number" ||
+    !value.dataUrl.startsWith("data:")
+  ) {
+    return null;
+  }
+  return {
+    id: value.id,
+    name: value.name,
+    mediaType: value.mediaType,
+    size: value.size,
+    dataUrl: value.dataUrl,
+    authorId: value.authorId,
+    createdAt: value.createdAt
+  };
 }
 
 function readComment(value: unknown): Comment | null {
@@ -137,6 +163,19 @@ function readIssue(value: unknown): ReadIssue | null {
     }
   }
 
+  const attachments: Attachment[] = [];
+  if (value.attachments !== undefined) {
+    if (!Array.isArray(value.attachments)) {
+      return null;
+    }
+    for (const item of value.attachments) {
+      const file = readAttachment(item);
+      if (!file) {
+        return null;
+      }
+      attachments.push(file);
+    }
+  }
   const labels = readLabels(value.labels);
   const storyPoints = readPoints(value.storyPoints);
   if (labels === null) {
@@ -177,6 +216,7 @@ function readIssue(value: unknown): ReadIssue | null {
       createdAt: value.createdAt,
       updatedAt: value.updatedAt,
       comments,
+      attachments,
       activity
     }
   };

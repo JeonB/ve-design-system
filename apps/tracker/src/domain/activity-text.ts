@@ -27,6 +27,7 @@ function fieldValue(field: ActivityEntry["field"], value: string, people: Person
     case "labels":
     case "points":
     case "parent":
+    case "attachment":
       return value;
     default: {
       const exhaustive: never = field;
@@ -41,6 +42,8 @@ export function formatActivity(entry: ActivityEntry, people: Person[]): string {
       return "created this issue";
     case "comment":
       return "commented";
+    case "attachment":
+      return entry.to.length === 0 ? `removed ${entry.from}` : `attached ${entry.to}`;
     case "summary":
     case "description":
     case "type":
