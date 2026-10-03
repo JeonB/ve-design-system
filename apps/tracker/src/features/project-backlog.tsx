@@ -4,6 +4,7 @@ import { Link } from "react-router";
 import { validateSummary } from "../domain/issue.types";
 import { typeLabel } from "../domain/labels";
 import { backlogIssues, issuesInSprint, sprintsByProject } from "../domain/sprints";
+import { can } from "../domain/permissions";
 import { useTracker } from "../domain/tracker-context";
 import { typeBadgeVariant } from "./issue-badges";
 
@@ -37,7 +38,7 @@ export function ProjectBacklog({ projectKey }: ProjectBacklogProps) {
     <Stack gap="md">
       <Stack direction="horizontal" justify="between" align="center">
         <strong>Backlog</strong>
-        <Button type="button" onClick={() => setOpen(true)}>
+        <Button disabled={!can(data, data.actorId, projectKey, "sprint")} type="button" onClick={() => setOpen(true)}>
           Create sprint
         </Button>
       </Stack>
@@ -54,11 +55,11 @@ export function ProjectBacklog({ projectKey }: ProjectBacklogProps) {
                   </Badge>
                 </Card.Title>
                 {sprint.state === "future" ? (
-                  <Button type="button" size="sm" onClick={() => data.startSprint(sprint.id)}>
+                  <Button disabled={!can(data, data.actorId, projectKey, "sprint")} type="button" size="sm" onClick={() => data.startSprint(sprint.id)}>
                     Start sprint
                   </Button>
                 ) : (
-                  <Button type="button" size="sm" variant="outline" onClick={() => data.completeSprint(sprint.id)}>
+                  <Button disabled={!can(data, data.actorId, projectKey, "sprint")} type="button" size="sm" variant="outline" onClick={() => data.completeSprint(sprint.id)}>
                     Complete sprint
                   </Button>
                 )}
@@ -146,6 +147,7 @@ function IssueRows({ issues, projectKey }: { issues: string[]; projectKey: strin
             </Stack>
             <Select
               aria-label={`${issue.key} sprint`}
+              disabled={!can(data, data.actorId, projectKey, "edit")}
               name={`sprint-${issue.id}`}
               value={issue.sprintId ?? ""}
               onChange={(event) => {

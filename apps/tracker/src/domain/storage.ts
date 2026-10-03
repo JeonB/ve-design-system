@@ -1,6 +1,5 @@
 import {
   isActivityField,
-  isIssueStatus,
   isIssueType,
   isPriority,
   isSprintState,
@@ -8,13 +7,17 @@ import {
   type Attachment,
   type Comment,
   type Issue,
+  type Membership,
   type Person,
   type Project,
   type SavedFilter,
   type Sprint,
-  type TrackerData
+  type TrackerData,
+  type Workflow
 } from "./issue.types";
+import { defaultMemberships } from "./permissions";
 import { seedTracker } from "./seed";
+import { defaultWorkflow, isStatusCategory } from "./workflow";
 
 export const TRACKER_STORAGE_KEY = "ve-tracker-data";
 export const TRACKER_SCHEMA_VERSION = 2;
@@ -126,7 +129,6 @@ function readIssue(value: unknown): ReadIssue | null {
     !isString(value.type) ||
     !isIssueType(value.type) ||
     !isString(value.status) ||
-    (value.status !== "backlog" && !isIssueStatus(value.status)) ||
     !isString(value.priority) ||
     !isPriority(value.priority) ||
     !isString(value.summary) ||
@@ -190,7 +192,7 @@ function readIssue(value: unknown): ReadIssue | null {
   const legacyOnBoard = value.sprintId === undefined && value.status !== "backlog";
   const sprintId = isString(value.sprintId) || value.sprintId === null ? value.sprintId : null;
   const rank = typeof value.rank === "number" ? value.rank : value.number;
-  if (!isIssueStatus(value.status) && value.status !== "backlog") {
+  if (!isString(value.status) || (value.status !== "backlog" && !/^[a-z][a-z0-9_]*$/.test(value.status))) {
     return null;
   }
 
@@ -274,7 +276,7 @@ function readSavedFilter(value: unknown): SavedFilter | null {
     return null;
   }
   const type = readChoice(value.type, isIssueType);
-  const status = readChoice(value.status, isIssueStatus);
+  const status = value.status === "all" || (isString(value.status) && /^[a-z][a-z0-9_]*$/.test(value.status)) ? value.status : null;
   if (type === null || status === null) {
     return null;
   }
@@ -294,6 +296,40 @@ function readSavedFilter(value: unknown): SavedFilter | null {
     assigneeId: value.assigneeId,
     jql: isString(value.jql) ? value.jql : ""
   };
+}
+
+function readMembership(value: unknown): Membership | null {
+  if (!isRecord(value) || !isString(value.projectKey) || !isString(value.personId) || !isString(value.role)) {
+    return null;
+  }
+  if (value.role !== "admin" && value.role !== "member" && value.role !== "viewer") {
+    return null;
+  }
+  return { projectKey: value.projectKey, personId: value.personId, role: value.role };
+}
+
+function readWorkflow(value: unknown): Workflow | null {
+  if (!isRecord(value) || !isString(value.projectKey) || !Array.isArray(value.statuses) || !Array.isArray(value.transitions)) {
+    return null;
+  }
+  const statuses: Workflow["statuses"] = [];
+  for (const item of value.statuses) {
+    if (!isRecord(item) || !isString(item.id) || !isString(item.name) || !isString(item.category) || !isStatusCategory(item.category)) {
+      return null;
+    }
+    statuses.push({ id: item.id, name: item.name, category: item.category });
+  }
+  const transitions: Workflow["transitions"] = [];
+  for (const item of value.transitions) {
+    if (!isRecord(item) || !isString(item.id) || !isString(item.from) || !isString(item.to) || !isString(item.name)) {
+      return null;
+    }
+    transitions.push({ id: item.id, from: item.from, to: item.to, name: item.name });
+  }
+  if (statuses.length === 0) {
+    return null;
+  }
+  return { projectKey: value.projectKey, statuses, transitions };
 }
 
 function readPerson(value: unknown): Person | null {
@@ -398,7 +434,37 @@ export function parseTracker(raw: string): TrackerData | null {
     }
   }
 
-  return { projects, people, sprints, issues, savedFilters };
+  const memberships: Membership[] = [];
+  if (data.memberships === undefined) {
+    memberships.push(...defaultMemberships(projects, people));
+  } else if (!Array.isArray(data.memberships)) {
+    return null;
+  } else {
+    for (const item of data.memberships) {
+      const membership = readMembership(item);
+      if (!membership) {
+        return null;
+      }
+      memberships.push(membership);
+    }
+  }
+
+  const workflows: Workflow[] = [];
+  if (data.workflows === undefined) {
+    workflows.push(...projects.map((project) => defaultWorkflow(project.key)));
+  } else if (!Array.isArray(data.workflows)) {
+    return null;
+  } else {
+    for (const item of data.workflows) {
+      const workflow = readWorkflow(item);
+      if (!workflow) {
+        return null;
+      }
+      workflows.push(workflow);
+    }
+  }
+
+  return { projects, people, sprints, issues, savedFilters, memberships, workflows };
 }
 
 export function serializeTracker(data: TrackerData): string {

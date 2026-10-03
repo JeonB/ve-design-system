@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Alert, Button, Stack, Tabs } from "@ve/ui";
 import { Outlet, useMatch, useNavigate, useParams } from "react-router";
 import { projectByKey } from "../domain/issues";
+import { can } from "../domain/permissions";
 import { activeSprint } from "../domain/sprints";
 import { useTracker } from "../domain/tracker-context";
 import { CreateIssueDialog } from "./create-issue-dialog";
@@ -14,6 +15,7 @@ export function ProjectSection() {
   const listMatch = useMatch("/p/:projectKey/list");
   const backlogMatch = useMatch("/p/:projectKey/backlog");
   const detailMatch = useMatch("/p/:projectKey/issues/:issueId");
+  const settingsMatch = useMatch("/p/:projectKey/settings");
   const [createOpen, setCreateOpen] = useState(false);
 
   if (!project) {
@@ -24,7 +26,8 @@ export function ProjectSection() {
     );
   }
 
-  const tab = backlogMatch ? "backlog" : listMatch ? "list" : "board";
+  const tab = backlogMatch ? "backlog" : listMatch ? "list" : settingsMatch ? "settings" : "board";
+  const mayCreate = can(data, data.actorId, project.key, "create");
 
   return (
     <Stack gap="md">
@@ -34,7 +37,7 @@ export function ProjectSection() {
           <span>{project.key}</span>
         </h1>
         {detailMatch ? null : (
-          <Button type="button" onClick={() => setCreateOpen(true)}>
+          <Button disabled={!mayCreate} type="button" onClick={() => setCreateOpen(true)}>
             Create issue
           </Button>
         )}
@@ -51,6 +54,10 @@ export function ProjectSection() {
               navigate(`/p/${project.key}/list`);
               return;
             }
+            if (value === "settings") {
+              navigate(`/p/${project.key}/settings`);
+              return;
+            }
             navigate(`/p/${project.key}`);
           }}
         >
@@ -58,6 +65,7 @@ export function ProjectSection() {
             <Tabs.Trigger value="backlog">Backlog</Tabs.Trigger>
             <Tabs.Trigger value="board">Board</Tabs.Trigger>
             <Tabs.Trigger value="list">Issues</Tabs.Trigger>
+            <Tabs.Trigger value="settings">Settings</Tabs.Trigger>
           </Tabs.List>
         </Tabs>
       )}
@@ -67,6 +75,9 @@ export function ProjectSection() {
         onCreate={(input) => {
           const sprintId = tab === "board" ? activeSprint(data, project.key)?.id ?? null : null;
           const issue = data.createIssue(project.key, { ...input, sprintId });
+          if (!issue) {
+            return;
+          }
           setCreateOpen(false);
           navigate(`/p/${project.key}/issues/${issue.id}`);
         }}

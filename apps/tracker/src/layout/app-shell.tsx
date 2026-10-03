@@ -35,7 +35,18 @@ export function AppShell() {
             ) : null}
           </div>
           <Stack direction="horizontal" gap="sm" align="center">
-            <span>{data.people.find((person) => person.id === data.actorId)?.name}</span>
+            <Select
+              aria-label="Acting as"
+              name="actor"
+              value={data.people.some((person) => person.id === data.actorId) ? data.actorId : (data.people[0]?.id ?? "")}
+              onChange={(event) => data.setActor(event.target.value)}
+            >
+              {data.people.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))}
+            </Select>
             <ThemeToggle />
           </Stack>
         </header>

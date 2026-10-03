@@ -3,15 +3,22 @@ import { useToast } from "@ve/ui";
 import { addAttachment, removeAttachment, type AttachmentInput } from "./attachments";
 import { deleteFilter, saveFilter, type SaveFilterInput } from "./filters";
 import { addComment, appendIssue, deleteIssue, updateIssue } from "./issues";
+import { ACTOR_STORAGE_KEY, can, setMembership } from "./permissions";
 import { assignSprint, completeSprint, createSprint, startSprint } from "./sprints";
-import type { CreateIssueInput, Issue, IssuePatch, TrackerData } from "./issue.types";
+import type { CreateIssueInput, Issue, IssuePatch, ProjectAction, ProjectRole, TrackerData } from "./issue.types";
 import { CURRENT_ACTOR_ID } from "./seed";
-import { statusLabel } from "./labels";
 import { loadTracker, saveTracker } from "./storage";
+import { addWorkflowStatus, addWorkflowTransition, canTransition, removeWorkflowStatus, removeWorkflowTransition, statusName, workflowFor, type StatusCategory } from "./workflow";
 
 type TrackerContextValue = TrackerData & {
   actorId: string;
-  createIssue: (projectKey: string, input: CreateIssueInput) => Issue;
+  createIssue: (projectKey: string, input: CreateIssueInput) => Issue | null;
+  setActor: (personId: string) => void;
+  setMembership: (projectKey: string, personId: string, role: ProjectRole) => boolean;
+  addWorkflowStatus: (projectKey: string, input: { id: string; name: string; category: StatusCategory }) => boolean;
+  removeWorkflowStatus: (projectKey: string, statusId: string) => boolean;
+  addWorkflowTransition: (projectKey: string, input: { from: string; to: string; name: string }) => boolean;
+  removeWorkflowTransition: (projectKey: string, transitionId: string) => void;
   updateIssue: (issueId: string, patch: IssuePatch) => void;
   deleteIssue: (issueId: string) => void;
   addComment: (issueId: string, body: string) => boolean;
@@ -30,7 +37,18 @@ const TrackerContext = createContext<TrackerContextValue | null>(null);
 export function TrackerProvider({ children }: { children: ReactNode }) {
   const [data, setData] = useState(() => loadTracker(window.localStorage));
   const dataRef = useRef(data);
+  const [actorId, setActorId] = useState(() => window.sessionStorage.getItem(ACTOR_STORAGE_KEY) ?? CURRENT_ACTOR_ID);
+  const actorRef = useRef(actorId);
   const { toast } = useToast();
+
+  const refuse = useCallback(() => {
+    toast({ title: "You don't have permission.", variant: "danger" });
+  }, [toast]);
+
+  const allowed = useCallback(
+    (projectKey: string, action: ProjectAction) => can(dataRef.current, actorRef.current, projectKey, action),
+    []
+  );
 
   const commit = useCallback((next: TrackerData) => {
     dataRef.current = next;
@@ -40,51 +58,84 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
 
   const createIssue = useCallback(
     (projectKey: string, input: CreateIssueInput) => {
-      const result = appendIssue(dataRef.current, projectKey, input, new Date().toISOString(), CURRENT_ACTOR_ID);
+      if (!allowed(projectKey, "create")) {
+        refuse();
+        return null;
+      }
+      const result = appendIssue(dataRef.current, projectKey, input, new Date().toISOString(), actorRef.current);
       commit(result.data);
       toast({ title: `${result.issue.key} created`, variant: "success" });
       return result.issue;
     },
-    [commit, toast]
+    [allowed, commit, refuse, toast]
   );
 
   const update = useCallback(
     (issueId: string, patch: IssuePatch) => {
       const current = dataRef.current.issues.find((issue) => issue.id === issueId);
-      commit(updateIssue(dataRef.current, issueId, patch, new Date().toISOString(), CURRENT_ACTOR_ID));
-      const statusOnly = Object.keys(patch).length === 1 && patch.status !== undefined;
-      if (statusOnly && current && patch.status && patch.status !== current.status) {
-        toast({ title: `${current.key} moved to ${statusLabel(patch.status)}`, variant: "success" });
+      if (!current) {
+        return;
+      }
+      const statusChanged = patch.status !== undefined && patch.status !== current.status;
+      const edits = Object.keys(patch).some((key) => key !== "status");
+      if (statusChanged && !allowed(current.projectKey, "transition")) {
+        refuse();
+        return;
+      }
+      if (statusChanged && patch.status && !canTransition(workflowFor(dataRef.current, current.projectKey), current.status, patch.status)) {
+        toast({ title: "That transition is not allowed.", variant: "danger" });
+        return;
+      }
+      if (edits && !allowed(current.projectKey, "edit")) {
+        refuse();
+        return;
+      }
+      commit(updateIssue(dataRef.current, issueId, patch, new Date().toISOString(), actorRef.current));
+      if (statusChanged && patch.status && !edits) {
+        toast({ title: `${current.key} moved to ${statusName(dataRef.current, current.projectKey, patch.status)}`, variant: "success" });
         return;
       }
       toast({ title: "Saved", variant: "success" });
     },
-    [commit, toast]
+    [allowed, commit, refuse, toast]
   );
 
   const remove = useCallback(
     (issueId: string) => {
       const current = dataRef.current.issues.find((issue) => issue.id === issueId);
+      if (!current || !allowed(current.projectKey, "delete")) {
+        refuse();
+        return;
+      }
       commit(deleteIssue(dataRef.current, issueId));
       toast({ title: current ? `${current.key} deleted` : "Issue deleted", variant: "neutral" });
     },
-    [commit, toast]
+    [allowed, commit, refuse, toast]
   );
 
   const comment = useCallback(
     (issueId: string, body: string) => {
+      const current = dataRef.current.issues.find((issue) => issue.id === issueId);
+      if (!current || !allowed(current.projectKey, "comment")) {
+        refuse();
+        return false;
+      }
       if (body.trim().length === 0) {
         return false;
       }
-      commit(addComment(dataRef.current, issueId, body, CURRENT_ACTOR_ID, new Date().toISOString()));
+      commit(addComment(dataRef.current, issueId, body, actorRef.current, new Date().toISOString()));
       toast({ title: "Comment added", variant: "success" });
       return true;
     },
-    [commit, toast]
+    [allowed, commit, refuse, toast]
   );
 
   const addSprint = useCallback(
     (projectKey: string, name: string) => {
+      if (!allowed(projectKey, "sprint")) {
+        refuse();
+        return false;
+      }
       const result = createSprint(dataRef.current, projectKey, name);
       if ("error" in result) {
         toast({ title: result.error, variant: "danger" });
@@ -94,11 +145,16 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       toast({ title: `${result.sprint.name} created`, variant: "success" });
       return true;
     },
-    [commit, toast]
+    [allowed, commit, refuse, toast]
   );
 
   const beginSprint = useCallback(
     (sprintId: string) => {
+      const sprint = dataRef.current.sprints.find((item) => item.id === sprintId);
+      if (!sprint || !allowed(sprint.projectKey, "sprint")) {
+        refuse();
+        return false;
+      }
       const result = startSprint(dataRef.current, sprintId, new Date().toISOString());
       if ("error" in result) {
         toast({ title: result.error, variant: "danger" });
@@ -108,23 +164,33 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       toast({ title: "Sprint started", variant: "success" });
       return true;
     },
-    [commit, toast]
+    [allowed, commit, refuse, toast]
   );
 
   const finishSprint = useCallback(
     (sprintId: string) => {
-      commit(completeSprint(dataRef.current, sprintId, new Date().toISOString(), CURRENT_ACTOR_ID));
+      const sprint = dataRef.current.sprints.find((item) => item.id === sprintId);
+      if (!sprint || !allowed(sprint.projectKey, "sprint")) {
+        refuse();
+        return;
+      }
+      commit(completeSprint(dataRef.current, sprintId, new Date().toISOString(), actorRef.current));
       toast({ title: "Sprint completed", variant: "success" });
     },
-    [commit, toast]
+    [allowed, commit, refuse, toast]
   );
 
   const moveToSprint = useCallback(
     (issueId: string, sprintId: string | null) => {
-      commit(assignSprint(dataRef.current, issueId, sprintId, new Date().toISOString(), CURRENT_ACTOR_ID));
+      const issue = dataRef.current.issues.find((item) => item.id === issueId);
+      if (!issue || !allowed(issue.projectKey, "edit")) {
+        refuse();
+        return;
+      }
+      commit(assignSprint(dataRef.current, issueId, sprintId, new Date().toISOString(), actorRef.current));
       toast({ title: sprintId ? "Added to sprint" : "Moved to backlog", variant: "success" });
     },
-    [commit, toast]
+    [allowed, commit, refuse, toast]
   );
 
   const storeFilter = useCallback(
@@ -151,7 +217,12 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
 
   const attach = useCallback(
     (issueId: string, input: AttachmentInput) => {
-      const result = addAttachment(dataRef.current, issueId, input, new Date().toISOString(), CURRENT_ACTOR_ID);
+      const issue = dataRef.current.issues.find((item) => item.id === issueId);
+      if (!issue || !allowed(issue.projectKey, "attach")) {
+        refuse();
+        return false;
+      }
+      const result = addAttachment(dataRef.current, issueId, input, new Date().toISOString(), actorRef.current);
       if ("error" in result) {
         toast({ title: result.error, variant: "danger" });
         return false;
@@ -160,21 +231,117 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       toast({ title: `${result.attachment.name} attached`, variant: "success" });
       return true;
     },
-    [commit, toast]
+    [allowed, commit, refuse, toast]
   );
 
   const detach = useCallback(
     (issueId: string, attachmentId: string) => {
-      commit(removeAttachment(dataRef.current, issueId, attachmentId, new Date().toISOString(), CURRENT_ACTOR_ID));
+      const issue = dataRef.current.issues.find((item) => item.id === issueId);
+      if (!issue || !allowed(issue.projectKey, "attach")) {
+        refuse();
+        return;
+      }
+      commit(removeAttachment(dataRef.current, issueId, attachmentId, new Date().toISOString(), actorRef.current));
       toast({ title: "Attachment removed", variant: "neutral" });
     },
-    [commit]
+    [allowed, commit, refuse]
+  );
+
+  const chooseActor = useCallback((personId: string) => {
+    if (!dataRef.current.people.some((person) => person.id === personId)) {
+      return;
+    }
+    actorRef.current = personId;
+    setActorId(personId);
+    window.sessionStorage.setItem(ACTOR_STORAGE_KEY, personId);
+  }, []);
+
+  const changeMembership = useCallback(
+    (projectKey: string, personId: string, role: ProjectRole) => {
+      if (!allowed(projectKey, "manage")) {
+        refuse();
+        return false;
+      }
+      const result = setMembership(dataRef.current, projectKey, personId, role);
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      return true;
+    },
+    [allowed, commit, refuse, toast]
+  );
+
+  const createStatus = useCallback(
+    (projectKey: string, input: { id: string; name: string; category: StatusCategory }) => {
+      if (!allowed(projectKey, "manage")) {
+        refuse();
+        return false;
+      }
+      const result = addWorkflowStatus(dataRef.current, projectKey, input);
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      toast({ title: "Status added", variant: "success" });
+      return true;
+    },
+    [allowed, commit, refuse, toast]
+  );
+
+  const deleteStatus = useCallback(
+    (projectKey: string, statusId: string) => {
+      if (!allowed(projectKey, "manage")) {
+        refuse();
+        return false;
+      }
+      const result = removeWorkflowStatus(dataRef.current, projectKey, statusId);
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      return true;
+    },
+    [allowed, commit, refuse, toast]
+  );
+
+  const createTransition = useCallback(
+    (projectKey: string, input: { from: string; to: string; name: string }) => {
+      if (!allowed(projectKey, "manage")) {
+        refuse();
+        return false;
+      }
+      const result = addWorkflowTransition(dataRef.current, projectKey, input);
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      toast({ title: "Transition added", variant: "success" });
+      return true;
+    },
+    [allowed, commit, refuse, toast]
+  );
+
+  const deleteTransition = useCallback(
+    (projectKey: string, transitionId: string) => {
+      if (!allowed(projectKey, "manage")) {
+        refuse();
+        return;
+      }
+      commit(removeWorkflowTransition(dataRef.current, projectKey, transitionId));
+    },
+    [allowed, commit, refuse]
   );
 
   const value = useMemo(
     () => ({
       ...data,
-      actorId: CURRENT_ACTOR_ID,
+      actorId,
+      setActor: chooseActor,
       createIssue,
       updateIssue: update,
       deleteIssue: remove,
@@ -186,9 +353,35 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       saveFilter: storeFilter,
       deleteFilter: removeFilter,
       addAttachment: attach,
-      removeAttachment: detach
+      removeAttachment: detach,
+      setMembership: changeMembership,
+      addWorkflowStatus: createStatus,
+      removeWorkflowStatus: deleteStatus,
+      addWorkflowTransition: createTransition,
+      removeWorkflowTransition: deleteTransition
     }),
-    [addSprint, attach, beginSprint, comment, createIssue, data, detach, finishSprint, moveToSprint, remove, removeFilter, storeFilter, update]
+    [
+      actorId,
+      addSprint,
+      attach,
+      beginSprint,
+      changeMembership,
+      chooseActor,
+      comment,
+      createIssue,
+      createStatus,
+      createTransition,
+      data,
+      deleteStatus,
+      deleteTransition,
+      detach,
+      finishSprint,
+      moveToSprint,
+      remove,
+      removeFilter,
+      storeFilter,
+      update
+    ]
   );
 
   return <TrackerContext.Provider value={value}>{children}</TrackerContext.Provider>;

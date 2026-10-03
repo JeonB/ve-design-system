@@ -80,7 +80,7 @@ export type Issue = {
   key: string;
   projectKey: string;
   type: IssueType;
-  status: IssueStatus;
+  status: string;
   priority: Priority;
   summary: string;
   description: string;
@@ -98,13 +98,47 @@ export type Issue = {
   activity: ActivityEntry[];
 };
 
+export const STATUS_CATEGORIES = ["todo", "in_progress", "done"] as const;
+export type StatusCategory = (typeof STATUS_CATEGORIES)[number];
+
+export type WorkflowStatus = {
+  id: string;
+  name: string;
+  category: StatusCategory;
+};
+
+export type WorkflowTransition = {
+  id: string;
+  from: string;
+  to: string;
+  name: string;
+};
+
+export type Workflow = {
+  projectKey: string;
+  statuses: WorkflowStatus[];
+  transitions: WorkflowTransition[];
+};
+
+export const PROJECT_ROLES = ["admin", "member", "viewer"] as const;
+export type ProjectRole = (typeof PROJECT_ROLES)[number];
+
+export const PROJECT_ACTIONS = ["view", "create", "edit", "comment", "transition", "attach", "delete", "sprint", "manage"] as const;
+export type ProjectAction = (typeof PROJECT_ACTIONS)[number];
+
+export type Membership = {
+  projectKey: string;
+  personId: string;
+  role: ProjectRole;
+};
+
 export type SavedFilter = {
   id: string;
   projectKey: string;
   name: string;
   query: string;
   type: IssueType | "all";
-  status: IssueStatus | "all";
+  status: string | "all";
   assigneeId: string | "all";
   jql: string;
 };
@@ -115,6 +149,8 @@ export type TrackerData = {
   sprints: Sprint[];
   issues: Issue[];
   savedFilters: SavedFilter[];
+  memberships: Membership[];
+  workflows: Workflow[];
 };
 
 export type CreateIssueInput = {
@@ -130,7 +166,7 @@ export type IssuePatch = {
   summary?: string;
   description?: string;
   type?: IssueType;
-  status?: IssueStatus;
+  status?: string;
   priority?: Priority;
   assigneeId?: string;
   labels?: string[];
@@ -141,7 +177,7 @@ export type IssuePatch = {
 export type IssueFilter = {
   query: string;
   type: IssueType | "all";
-  status: IssueStatus | "all";
+  status: string | "all";
   assigneeId: string | "all";
 };
 

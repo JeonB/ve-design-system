@@ -5,6 +5,7 @@ import { ProjectBacklog } from "./features/project-backlog";
 import { ProjectBoard } from "./features/project-board";
 import { ProjectList } from "./features/project-list";
 import { ProjectSection } from "./features/project-section";
+import { ProjectSettings } from "./features/project-settings";
 import { AppShell } from "./layout/app-shell";
 
 export function TrackerRoutes() {
@@ -16,6 +17,7 @@ export function TrackerRoutes() {
           <Route index element={<BoardRoute />} />
           <Route path="backlog" element={<BacklogRoute />} />
           <Route path="list" element={<ListRoute />} />
+          <Route path="settings" element={<SettingsRoute />} />
           <Route path="issues/:issueId" element={<DetailRoute />} />
         </Route>
       </Route>
@@ -31,6 +33,11 @@ function BacklogRoute() {
 function BoardRoute() {
   const { projectKey = "" } = useParams();
   return <ProjectBoard projectKey={projectKey} />;
+}
+
+function SettingsRoute() {
+  const { projectKey = "" } = useParams();
+  return <ProjectSettings projectKey={projectKey} />;
 }
 
 function ListRoute() {

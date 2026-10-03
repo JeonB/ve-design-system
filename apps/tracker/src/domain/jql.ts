@@ -350,8 +350,12 @@ function texts(issue: Issue, field: string, data: TrackerData): string[] {
       return [issue.description];
     case "text":
       return [issue.summary, issue.description, ...issue.comments.map((comment) => comment.body)];
-    case "status":
-      return isIssueStatus(issue.status) ? [issue.status, statusLabel(issue.status)] : [issue.status];
+    case "status": {
+      const names = data.workflows.flatMap((workflow) =>
+        workflow.statuses.filter((status) => status.id === issue.status).map((status) => status.name)
+      );
+      return isIssueStatus(issue.status) ? [issue.status, statusLabel(issue.status), ...names] : [issue.status, ...names];
+    }
     case "type":
       return isIssueType(issue.type) ? [issue.type, typeLabel(issue.type)] : [issue.type];
     case "priority":

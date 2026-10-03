@@ -1,34 +1,40 @@
 import { Field, Input, Select, Stack } from "@ve/ui";
 import {
-  ISSUE_STATUSES,
   ISSUE_TYPES,
   PRIORITIES,
-  isIssueStatus,
   isIssueType,
   isPriority,
-  type IssueStatus,
   type IssueType,
   type Person,
   type Priority
 } from "../domain/issue.types";
-import { priorityLabel, statusLabel, typeLabel } from "../domain/labels";
+import { priorityLabel, typeLabel } from "../domain/labels";
 
 export type IssueFieldValues = {
   type: IssueType;
-  status: IssueStatus;
+  status: string;
   priority: Priority;
   assigneeId: string;
   labels: string;
   storyPoints: string;
 };
 
+type StatusChoice = {
+  id: string;
+  name: string;
+};
+
 type IssueFieldsProps = {
   values: IssueFieldValues;
   people: Person[];
+  statuses: StatusChoice[];
   onChange: (patch: Partial<IssueFieldValues>) => void;
 };
 
-export function IssueFields({ values, people, onChange }: IssueFieldsProps) {
+export function IssueFields({ values, people, statuses, onChange }: IssueFieldsProps) {
+  const statusOptions = statuses.some((status) => status.id === values.status)
+    ? statuses
+    : [{ id: values.status, name: values.status }, ...statuses];
   return (
     <Stack gap="md">
       <Field>
@@ -57,14 +63,14 @@ export function IssueFields({ values, people, onChange }: IssueFieldsProps) {
           value={values.status}
           onChange={(event) => {
             const next = event.target.value;
-            if (isIssueStatus(next)) {
+            if (statusOptions.some((status) => status.id === next)) {
               onChange({ status: next });
             }
           }}
         >
-          {ISSUE_STATUSES.map((option) => (
-            <option key={option} value={option}>
-              {statusLabel(option)}
+          {statusOptions.map((option) => (
+            <option key={option.id} value={option.id}>
+              {option.name}
             </option>
           ))}
         </Select>

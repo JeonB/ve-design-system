@@ -4,15 +4,13 @@ import { Link } from "react-router";
 import { filterIssues, issuesByProject, personById } from "../domain/issues";
 import { evaluateJql } from "../domain/jql";
 import {
-  ISSUE_STATUSES,
   ISSUE_TYPES,
-  isIssueStatus,
   isIssueType,
-  type IssueStatus,
   type IssueType,
   type SavedFilter
 } from "../domain/issue.types";
-import { statusLabel, typeLabel } from "../domain/labels";
+import { typeLabel } from "../domain/labels";
+import { statusName, workflowFor } from "../domain/workflow";
 import { useTracker } from "../domain/tracker-context";
 import { filterBar } from "../layout/shell.css";
 import { statusBadgeVariant, typeBadgeVariant } from "./issue-badges";
@@ -25,10 +23,11 @@ export function IssueList({ projectKey }: IssueListProps) {
   const data = useTracker();
   const [query, setQuery] = useState("");
   const [type, setType] = useState<IssueType | "all">("all");
-  const [status, setStatus] = useState<IssueStatus | "all">("all");
+  const [status, setStatus] = useState("all");
   const [assigneeId, setAssigneeId] = useState("all");
   const [filterName, setFilterName] = useState("");
   const [jql, setJql] = useState("");
+  const workflow = workflowFor(data, projectKey);
   const saved = data.savedFilters.filter((filter) => filter.projectKey === projectKey);
   const jqlText = jql.trim();
   const jqlResult = jqlText.length === 0 ? null : evaluateJql(data, jqlText, data.actorId);
@@ -101,16 +100,13 @@ export function IssueList({ projectKey }: IssueListProps) {
             name="filter-status"
             value={status}
             onChange={(event) => {
-              const next = event.target.value;
-              if (next === "all" || isIssueStatus(next)) {
-                setStatus(next);
-              }
+              setStatus(event.target.value);
             }}
           >
             <option value="all">All statuses</option>
-            {ISSUE_STATUSES.map((option) => (
-              <option key={option} value={option}>
-                {statusLabel(option)}
+            {workflow.statuses.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.name}
               </option>
             ))}
           </Select>
@@ -176,8 +172,8 @@ export function IssueList({ projectKey }: IssueListProps) {
                       <Badge size="sm" variant={typeBadgeVariant(issue.type)}>
                         {typeLabel(issue.type)}
                       </Badge>
-                      <Badge size="sm" variant={statusBadgeVariant(issue.status)}>
-                        {statusLabel(issue.status)}
+                      <Badge size="sm" variant={statusBadgeVariant(issue.status, workflow.statuses.find((item) => item.id === issue.status)?.category)}>
+                        {statusName(data, projectKey, issue.status)}
                       </Badge>
                       <Card.Description>{issue.key}</Card.Description>
                     </Stack>

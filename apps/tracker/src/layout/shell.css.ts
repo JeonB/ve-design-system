@@ -48,7 +48,7 @@ export const projectGrid = style({
 
 export const board = style({
   display: "grid",
-  gridTemplateColumns: "repeat(4, minmax(200px, 1fr))",
+  gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
   gap: vars.space.x3,
   overflowX: "auto",
   alignItems: "start"

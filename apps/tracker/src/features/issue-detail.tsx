@@ -15,7 +15,9 @@ import { Link, useNavigate } from "react-router";
 import { formatActivity } from "../domain/activity-text";
 import { childIssues, issueById, personById } from "../domain/issues";
 import { validateSummary } from "../domain/issue.types";
+import { can } from "../domain/permissions";
 import { useTracker } from "../domain/tracker-context";
+import { transitionTargets, workflowFor } from "../domain/workflow";
 import { detail, narrowOnly, sidePanel } from "../layout/shell.css";
 import { IssueFields, type IssueFieldValues } from "./issue-fields";
 
@@ -58,6 +60,17 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
 
   const currentIssue = issue;
   const currentFields = fields;
+  const workflow = workflowFor(data, currentIssue.projectKey);
+  const currentStatus = workflow.statuses.find((status) => status.id === currentIssue.status);
+  const statusOptions = [
+    currentStatus ?? { id: currentIssue.status, name: currentIssue.status },
+    ...transitionTargets(workflow, currentIssue.status)
+  ].filter((status, index, list) => list.findIndex((item) => item.id === status.id) === index);
+  const mayEdit = can(data, data.actorId, currentIssue.projectKey, "edit");
+  const mayDelete = can(data, data.actorId, currentIssue.projectKey, "delete");
+  const mayComment = can(data, data.actorId, currentIssue.projectKey, "comment");
+  const mayAttach = can(data, data.actorId, currentIssue.projectKey, "attach");
+  const mayCreate = can(data, data.actorId, currentIssue.projectKey, "create");
   const reporter = personById(data, currentIssue.reporterId);
 
   const save = () => {
@@ -134,6 +147,7 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
     <Stack gap="md">
       <IssueFields
         people={data.people}
+        statuses={statusOptions}
         values={currentFields}
         onChange={(patch) => setFields((current) => (current ? { ...current, ...patch } : current))}
       />
@@ -173,10 +187,10 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
             <Textarea name="description" value={description} onChange={(event) => setDescription(event.target.value)} />
           </Field>
           <Stack direction="horizontal" gap="sm">
-            <Button type="button" onClick={save}>
+            <Button disabled={!mayEdit} type="button" onClick={save}>
               Save
             </Button>
-            <Button type="button" variant="dangerOutline" onClick={() => setDeleteOpen(true)}>
+            <Button disabled={!mayDelete} type="button" variant="dangerOutline" onClick={() => setDeleteOpen(true)}>
               Delete
             </Button>
             <span className={narrowOnly}>
@@ -202,7 +216,7 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
             ))}
             <Field>
               <Field.Label>Add file</Field.Label>
-              <Input accept="image/*,.txt,.md,.pdf" name="attachment" type="file" onChange={onFile} />
+              <Input accept="image/*,.txt,.md,.pdf" disabled={!mayAttach} name="attachment" type="file" onChange={onFile} />
             </Field>
           </Stack>
           <Separator />
@@ -218,7 +232,7 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
               <Field.Label>New subtask</Field.Label>
               <Input name="subtask" value={subtask} onChange={(event) => setSubtask(event.target.value)} />
             </Field>
-            <Button type="button" variant="outline" onClick={addSubtask}>
+            <Button disabled={!mayCreate} type="button" variant="outline" onClick={addSubtask}>
               Add subtask
             </Button>
           </Stack>
@@ -261,7 +275,7 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
               />
               {commentError ? <Field.Error>{commentError}</Field.Error> : null}
             </Field>
-            <Button type="button" variant="secondary" onClick={submitComment}>
+            <Button disabled={!mayComment} type="button" variant="secondary" onClick={submitComment}>
               Add comment
             </Button>
           </Stack>

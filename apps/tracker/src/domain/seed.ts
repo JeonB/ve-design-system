@@ -1,4 +1,6 @@
 import type { Issue, TrackerData } from "./issue.types";
+import { defaultMemberships } from "./permissions";
+import { defaultWorkflow } from "./workflow";
 
 export const CURRENT_ACTOR_ID = "ada";
 
@@ -180,6 +182,8 @@ export function seedTracker(): TrackerData {
       parentId: null,
       attachments: []
     })),
-    savedFilters: []
+    savedFilters: [],
+    memberships: defaultMemberships(drafted.projects, drafted.people),
+    workflows: drafted.projects.map((project) => defaultWorkflow(project.key))
   };
 }

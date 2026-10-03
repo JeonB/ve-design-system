@@ -1,17 +1,19 @@
 import { Avatar, Badge, Button, Card, Select, Stack } from "@ve/ui";
 import { Link } from "react-router";
 import { personById } from "../domain/issues";
-import { ISSUE_STATUSES, isIssueStatus, type Issue, type IssueStatus, type TrackerData } from "../domain/issue.types";
-import { priorityLabel, statusLabel, typeLabel } from "../domain/labels";
+import type { Issue, TrackerData } from "../domain/issue.types";
+import { priorityLabel, typeLabel } from "../domain/labels";
 import { priorityBadgeVariant, typeBadgeVariant } from "./issue-badges";
 
 type IssueCardProps = {
   issue: Issue;
   data: TrackerData;
-  onStatusChange: (issueId: string, status: IssueStatus) => void;
+  statuses: Array<{ id: string; name: string }>;
+  statusDisabled?: boolean;
+  onStatusChange: (issueId: string, status: string) => void;
 };
 
-export function IssueCard({ issue, data, onStatusChange }: IssueCardProps) {
+export function IssueCard({ issue, data, statuses, statusDisabled = false, onStatusChange }: IssueCardProps) {
   const assignee = personById(data, issue.assigneeId);
 
   return (
@@ -46,18 +48,15 @@ export function IssueCard({ issue, data, onStatusChange }: IssueCardProps) {
           aria-label={`${issue.key} status`}
           name={`status-${issue.id}`}
           size="sm"
+          disabled={statusDisabled}
           value={issue.status}
           onChange={(event) => {
-            const next = event.target.value;
-            if (!isIssueStatus(next)) {
-              return;
-            }
-            onStatusChange(issue.id, next);
+            onStatusChange(issue.id, event.target.value);
           }}
         >
-          {ISSUE_STATUSES.map((status) => (
-            <option key={status} value={status}>
-              {statusLabel(status)}
+          {statuses.map((status) => (
+            <option key={status.id} value={status.id}>
+              {status.name}
             </option>
           ))}
         </Select>

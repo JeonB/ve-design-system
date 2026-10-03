@@ -1,4 +1,5 @@
 import type { Issue, Sprint, TrackerData } from "./issue.types";
+import { isDoneStatus } from "./workflow";
 import { updateIssue } from "./issues";
 
 export function sprintsByProject(data: TrackerData, projectKey: string): Sprint[] {
@@ -123,7 +124,7 @@ export function completeSprint(data: TrackerData, sprintId: string, now: string,
     )
   };
   for (const issue of data.issues) {
-    if (issue.sprintId === sprintId && issue.status !== "done") {
+    if (issue.sprintId === sprintId && !isDoneStatus(data, issue)) {
       next = assignSprint(next, issue.id, null, now, actorId);
     }
   }

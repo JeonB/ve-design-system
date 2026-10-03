@@ -2,9 +2,9 @@ import { useState } from "react";
 import { Alert, Badge, Field, Input, Stack, Switch } from "@ve/ui";
 import { Link } from "react-router";
 import { matchesQuickFilter } from "../domain/issues";
-import { ISSUE_STATUSES, isIssueStatus, type IssueStatus } from "../domain/issue.types";
-import { statusLabel } from "../domain/labels";
+import { can } from "../domain/permissions";
 import { activeSprint, issuesInSprint } from "../domain/sprints";
+import { transitionTargets, workflowFor } from "../domain/workflow";
 import { useTracker } from "../domain/tracker-context";
 import { board, column } from "../layout/shell.css";
 import { IssueCard } from "./issue-card";
@@ -17,7 +17,7 @@ export function ProjectBoard({ projectKey }: ProjectBoardProps) {
   const data = useTracker();
   const [query, setQuery] = useState("");
   const [onlyMine, setOnlyMine] = useState(false);
-  const [dropStatus, setDropStatus] = useState<IssueStatus | null>(null);
+  const [dropStatus, setDropStatus] = useState<string | null>(null);
   const sprint = activeSprint(data, projectKey);
   if (!sprint) {
     return (
@@ -26,6 +26,8 @@ export function ProjectBoard({ projectKey }: ProjectBoardProps) {
       </Alert>
     );
   }
+  const workflow = workflowFor(data, projectKey);
+  const mayTransition = can(data, data.actorId, projectKey, "transition");
   const issues = issuesInSprint(data, sprint.id);
   const visible = issues.filter((issue) => matchesQuickFilter(issue, query, onlyMine ? data.actorId : null));
 
@@ -42,30 +44,30 @@ export function ProjectBoard({ projectKey }: ProjectBoardProps) {
         </Stack>
       </Stack>
     <div className={board}>
-      {ISSUE_STATUSES.map((status) => {
-        const columnIssues = visible.filter((issue) => issue.status === status);
+      {workflow.statuses.map((status) => {
+        const columnIssues = visible.filter((issue) => issue.status === status.id);
         return (
           <section
-            key={status}
+            key={status.id}
             className={column}
-            data-drop={dropStatus === status ? "true" : undefined}
+            data-drop={dropStatus === status.id ? "true" : undefined}
             onDragOver={(event) => {
               event.preventDefault();
-              setDropStatus(status);
+              setDropStatus(status.id);
             }}
-            onDragLeave={() => setDropStatus((current) => (current === status ? null : current))}
+            onDragLeave={() => setDropStatus((current) => (current === status.id ? null : current))}
             onDrop={(event) => {
               event.preventDefault();
               setDropStatus(null);
               const issueId = event.dataTransfer.getData("text/plain");
-              if (!isIssueStatus(status) || issueId.length === 0) {
+              if (issueId.length === 0) {
                 return;
               }
-              data.updateIssue(issueId, { status });
+              data.updateIssue(issueId, { status: status.id });
             }}
           >
             <Stack direction="horizontal" align="center" justify="between">
-              <strong>{statusLabel(status)}</strong>
+              <strong>{status.name}</strong>
               <Badge size="sm">{columnIssues.length}</Badge>
             </Stack>
             {columnIssues.length === 0 ? (
@@ -76,6 +78,11 @@ export function ProjectBoard({ projectKey }: ProjectBoardProps) {
                   key={issue.id}
                   data={data}
                   issue={issue}
+                  statusDisabled={!mayTransition}
+                  statuses={[
+                    { id: issue.status, name: workflow.statuses.find((item) => item.id === issue.status)?.name ?? issue.status },
+                    ...transitionTargets(workflow, issue.status).map((item) => ({ id: item.id, name: item.name }))
+                  ].filter((item, index, list) => list.findIndex((other) => other.id === item.id) === index)}
                   onStatusChange={(issueId, next) => data.updateIssue(issueId, { status: next })}
                 />
               ))
