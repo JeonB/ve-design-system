@@ -14,11 +14,12 @@ import { priorityLabel, typeLabel } from "../domain/labels";
 
 type CreateIssueDialogProps = {
   open: boolean;
+  hint?: string;
   onOpenChange: (open: boolean) => void;
   onCreate: (input: CreateIssueInput) => void;
 };
 
-export function CreateIssueDialog({ open, onOpenChange, onCreate }: CreateIssueDialogProps) {
+export function CreateIssueDialog({ open, hint = "New work starts in To Do.", onOpenChange, onCreate }: CreateIssueDialogProps) {
   const [type, setType] = useState<IssueType>("story");
   const [summary, setSummary] = useState("");
   const [description, setDescription] = useState("");
@@ -57,7 +58,7 @@ export function CreateIssueDialog({ open, onOpenChange, onCreate }: CreateIssueD
         <Dialog.Close />
         <Dialog.Header>
           <Dialog.Title>Create issue</Dialog.Title>
-          <Dialog.Description>New issues start in To do.</Dialog.Description>
+          <Dialog.Description>{hint}</Dialog.Description>
         </Dialog.Header>
         <form onSubmit={handleSubmit}>
           <Stack gap="md">

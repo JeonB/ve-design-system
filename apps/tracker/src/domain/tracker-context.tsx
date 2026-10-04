@@ -2,11 +2,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useToast } from "@ve/ui";
 import { addAttachment, removeAttachment, type AttachmentInput } from "./attachments";
 import { deleteFilter, saveFilter, type SaveFilterInput } from "./filters";
-import { addComment, appendIssue, deleteIssue, issueById, updateIssue } from "./issues";
+import { addComment, addLink, appendIssue, deleteIssue, issueById, removeLink, toggleWatch, updateIssue } from "./issues";
 import { appendNotices, freshPresence, markAllNoticesRead, markNoticeRead, noticesForComment, noticesForUpdate, type Presence } from "./mail";
 import { ACTOR_STORAGE_KEY, can, setMembership } from "./permissions";
 import { assignSprint, completeSprint, createSprint, startSprint } from "./sprints";
-import type { CreateIssueInput, Issue, IssuePatch, ProjectAction, ProjectRole, TrackerData } from "./issue.types";
+import type { CreateIssueInput, Issue, IssuePatch, LinkType, ProjectAction, ProjectRole, TrackerData } from "./issue.types";
 import { CURRENT_ACTOR_ID } from "./seed";
 import { TRACKER_STORAGE_KEY, loadTracker, saveTracker } from "./storage";
 import { addWorkflowStatus, addWorkflowTransition, canTransition, removeWorkflowStatus, removeWorkflowTransition, statusName, workflowFor, type StatusCategory } from "./workflow";
@@ -31,6 +31,9 @@ type TrackerContextValue = TrackerData & {
   deleteFilter: (filterId: string) => void;
   addAttachment: (issueId: string, input: AttachmentInput) => boolean;
   removeAttachment: (issueId: string, attachmentId: string) => void;
+  toggleWatch: (issueId: string) => void;
+  addLink: (issueId: string, type: LinkType, targetId: string) => boolean;
+  removeLink: (issueId: string, targetId: string) => void;
   presence: Presence[];
   announce: (issueId: string) => void;
   markNoticeRead: (noticeId: string) => void;
@@ -307,6 +310,48 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       commit(removeAttachment(dataRef.current, issueId, attachmentId, new Date().toISOString(), actorRef.current));
       toast({ title: "Attachment removed", variant: "neutral" });
     },
+    [allowed, commit, refuse, toast]
+  );
+
+  const watch = useCallback(
+    (issueId: string) => {
+      const issue = dataRef.current.issues.find((item) => item.id === issueId);
+      if (!issue || !allowed(issue.projectKey, "edit")) {
+        refuse();
+        return;
+      }
+      commit(toggleWatch(dataRef.current, issueId, actorRef.current));
+    },
+    [allowed, commit, refuse]
+  );
+
+  const linkIssue = useCallback(
+    (issueId: string, type: LinkType, targetId: string) => {
+      const issue = dataRef.current.issues.find((item) => item.id === issueId);
+      if (!issue || !allowed(issue.projectKey, "edit")) {
+        refuse();
+        return false;
+      }
+      const result = addLink(dataRef.current, issueId, type, targetId, new Date().toISOString(), actorRef.current);
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      return true;
+    },
+    [allowed, commit, refuse, toast]
+  );
+
+  const unlinkIssue = useCallback(
+    (issueId: string, targetId: string) => {
+      const issue = dataRef.current.issues.find((item) => item.id === issueId);
+      if (!issue || !allowed(issue.projectKey, "edit")) {
+        refuse();
+        return;
+      }
+      commit(removeLink(dataRef.current, issueId, targetId, new Date().toISOString(), actorRef.current));
+    },
     [allowed, commit, refuse]
   );
 
@@ -432,6 +477,9 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       deleteFilter: removeFilter,
       addAttachment: attach,
       removeAttachment: detach,
+      toggleWatch: watch,
+      addLink: linkIssue,
+      removeLink: unlinkIssue,
       setMembership: changeMembership,
       addWorkflowStatus: createStatus,
       removeWorkflowStatus: deleteStatus,
@@ -459,6 +507,9 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       deleteTransition,
       detach,
       finishSprint,
+      linkIssue,
+      unlinkIssue,
+      watch,
       moveToSprint,
       presence,
       readAllNotices,

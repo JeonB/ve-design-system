@@ -2,12 +2,13 @@ import { Badge, Button, Card, Stack } from "@ve/ui";
 import { Link } from "react-router";
 import { countByProject } from "../domain/issues";
 import { useTracker } from "../domain/tracker-context";
-import { projectGrid } from "../layout/shell.css";
+import { padded, projectGrid } from "../layout/shell.css";
 
 export function ProjectList() {
   const data = useTracker();
 
   return (
+    <div className={padded}>
     <Stack gap="md">
       <h1>Projects</h1>
       <div className={projectGrid}>
@@ -31,5 +32,6 @@ export function ProjectList() {
         ))}
       </div>
     </Stack>
+    </div>
   );
 }

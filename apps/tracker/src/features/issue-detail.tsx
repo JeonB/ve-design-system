@@ -1,29 +1,41 @@
 import { useEffect, useState, type ChangeEvent } from "react";
-import {
-  Alert,
-  Avatar,
-  Button,
-  Dialog,
-  Drawer,
-  Field,
-  Input,
-  Separator,
-  Stack,
-  Textarea
-} from "@ve/ui";
+import { Alert, Avatar, Button, Dialog, Drawer, Field, Input, Select, Separator, Stack, Textarea } from "@ve/ui";
 import { Link, useNavigate } from "react-router";
 import { formatActivity } from "../domain/activity-text";
-import { childIssues, issueById, personById } from "../domain/issues";
-import { validateSummary } from "../domain/issue.types";
+import { childIssues, issueById, issuesByProject, personById } from "../domain/issues";
+import { ISSUE_TYPES, LINK_TYPES, PRIORITIES, isIssueType, isLinkType, isPriority, validateSummary, type LinkType } from "../domain/issue.types";
+import { priorityLabel, typeLabel } from "../domain/labels";
 import { can } from "../domain/permissions";
 import { useTracker } from "../domain/tracker-context";
 import { transitionTargets, workflowFor } from "../domain/workflow";
-import { detail, narrowOnly, sidePanel } from "../layout/shell.css";
-import { IssueFields, type IssueFieldValues } from "./issue-fields";
+import {
+  activityTabs,
+  chipRow,
+  detail,
+  dropZone,
+  issueBackdrop,
+  issueCrumb,
+  issueDialog,
+  issueOverlay,
+  issueTitle,
+  issueTop,
+  narrowOnly,
+  sectionLabel,
+  sidePanel
+} from "../layout/shell.css";
+import type { IssueFieldValues } from "./issue-fields";
 
 type IssueDetailProps = {
   issueId: string;
 };
+
+type ActivityTab = "all" | "comments" | "history";
+
+const QUICK_COMMENTS = ["Looks good!", "Need help?", "This is blocked...", "Can you clarify...?"] as const;
+
+function isActivityTab(value: string): value is ActivityTab {
+  return value === "all" || value === "comments" || value === "history";
+}
 
 export function IssueDetail({ issueId }: IssueDetailProps) {
   const data = useTracker();
@@ -54,11 +66,14 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
   const [commentError, setCommentError] = useState<string | null>(null);
   const [fieldsOpen, setFieldsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
+  const [activityTab, setActivityTab] = useState<ActivityTab>("all");
+  const [linkType, setLinkType] = useState<LinkType>("relates");
+  const [linkTarget, setLinkTarget] = useState("");
 
   if (!issue || !fields) {
     return (
       <Alert title="Issue not found" variant="danger">
-        <Link to="/">Back to projects</Link>
+        <Link to="/">Back to spaces</Link>
       </Alert>
     );
   }
@@ -72,6 +87,7 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
     ...transitionTargets(workflow, currentIssue.status)
   ].filter((status, index, list) => list.findIndex((item) => item.id === status.id) === index);
   const mayEdit = can(data, data.actorId, currentIssue.projectKey, "edit");
+  const mayTransition = can(data, data.actorId, currentIssue.projectKey, "transition");
   const mayDelete = can(data, data.actorId, currentIssue.projectKey, "delete");
   const mayComment = can(data, data.actorId, currentIssue.projectKey, "comment");
   const mayAttach = can(data, data.actorId, currentIssue.projectKey, "attach");
@@ -80,6 +96,9 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
     .filter((item) => item.issueId === currentIssue.id && item.actorId !== data.actorId)
     .map((item) => personById(data, item.actorId)?.name ?? item.actorId);
   const reporter = personById(data, currentIssue.reporterId);
+  const parent = currentIssue.parentId ? issueById(data, currentIssue.parentId) : undefined;
+  const siblings = issuesByProject(data, currentIssue.projectKey).filter((item) => item.id !== currentIssue.id);
+  const watching = currentIssue.watchers.includes(data.actorId);
 
   const save = () => {
     const error = validateSummary(summary);
@@ -93,7 +112,6 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
       summary,
       description,
       type: currentFields.type,
-      status: currentFields.status,
       priority: currentFields.priority,
       assigneeId: currentFields.assigneeId,
       labels: currentFields.labels
@@ -153,149 +171,381 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
 
   const fieldPanel = (
     <Stack gap="md">
-      <IssueFields
-        people={data.people}
-        statuses={statusOptions}
-        values={currentFields}
-        onChange={(patch) => setFields((current) => (current ? { ...current, ...patch } : current))}
-      />
+      <Field>
+        <Field.Label>Assignee</Field.Label>
+        <Select
+          disabled={!mayEdit}
+          name="assignee"
+          value={currentFields.assigneeId}
+          onChange={(event) => setFields((current) => (current ? { ...current, assigneeId: event.target.value } : current))}
+        >
+          {data.people.map((person) => (
+            <option key={person.id} value={person.id}>
+              {person.name}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Button
+        disabled={!mayEdit}
+        type="button"
+        variant="link"
+        onClick={() => setFields((current) => (current ? { ...current, assigneeId: data.actorId } : current))}
+      >
+        Assign to me
+      </Button>
+      <Field>
+        <Field.Label>Parent</Field.Label>
+        <Select
+          disabled={!mayEdit}
+          name="parent"
+          value={currentIssue.parentId ?? ""}
+          onChange={(event) => data.updateIssue(currentIssue.id, { parentId: event.target.value.length === 0 ? null : event.target.value })}
+        >
+          <option value="">None</option>
+          {siblings.map((item) => (
+            <option key={item.id} value={item.id}>
+              {item.key} {item.summary}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field>
+        <Field.Label>Due date</Field.Label>
+        <Input
+          disabled={!mayEdit}
+          name="due-date"
+          type="date"
+          value={currentIssue.dueDate ?? ""}
+          onChange={(event) => data.updateIssue(currentIssue.id, { dueDate: event.target.value.length === 0 ? null : event.target.value })}
+        />
+      </Field>
+      <Field>
+        <Field.Label>Start date</Field.Label>
+        <Input
+          disabled={!mayEdit}
+          name="start-date"
+          type="date"
+          value={currentIssue.startDate ?? ""}
+          onChange={(event) => data.updateIssue(currentIssue.id, { startDate: event.target.value.length === 0 ? null : event.target.value })}
+        />
+      </Field>
+      <Field>
+        <Field.Label>Priority</Field.Label>
+        <Select
+          disabled={!mayEdit}
+          name="priority"
+          value={currentFields.priority}
+          onChange={(event) => {
+            const next = event.target.value;
+            if (isPriority(next)) {
+              setFields((current) => (current ? { ...current, priority: next } : current));
+            }
+          }}
+        >
+          {PRIORITIES.map((option) => (
+            <option key={option} value={option}>
+              {priorityLabel(option)}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field>
+        <Field.Label>Type</Field.Label>
+        <Select
+          disabled={!mayEdit}
+          name="type"
+          value={currentFields.type}
+          onChange={(event) => {
+            const next = event.target.value;
+            if (isIssueType(next)) {
+              setFields((current) => (current ? { ...current, type: next } : current));
+            }
+          }}
+        >
+          {ISSUE_TYPES.map((option) => (
+            <option key={option} value={option}>
+              {typeLabel(option)}
+            </option>
+          ))}
+        </Select>
+      </Field>
+      <Field>
+        <Field.Label>Labels</Field.Label>
+        <Input
+          disabled={!mayEdit}
+          name="labels"
+          value={currentFields.labels}
+          onChange={(event) => setFields((current) => (current ? { ...current, labels: event.target.value } : current))}
+        />
+      </Field>
+      <Field>
+        <Field.Label>Story points</Field.Label>
+        <Input
+          disabled={!mayEdit}
+          name="story-points"
+          value={currentFields.storyPoints}
+          onChange={(event) => setFields((current) => (current ? { ...current, storyPoints: event.target.value } : current))}
+        />
+      </Field>
+      <Button disabled={!mayEdit} type="button" onClick={save}>
+        Save
+      </Button>
       {reporter ? (
         <Stack direction="horizontal" gap="sm" align="center">
           <Avatar alt={reporter.name} size="sm" />
           <span>Reporter · {reporter.name}</span>
         </Stack>
       ) : null}
+      <Button disabled={!mayEdit} type="button" variant="outline" onClick={() => data.toggleWatch(currentIssue.id)}>
+        {watching ? `Watching · ${currentIssue.watchers.length}` : `Watch · ${currentIssue.watchers.length}`}
+      </Button>
     </Stack>
   );
 
   return (
-    <Stack gap="md">
-      <Stack direction="horizontal" gap="sm" align="center" justify="between">
-        <Button asChild size="sm" variant="ghost">
-          <Link to={`/p/${currentIssue.projectKey}`}>Back to board</Link>
-        </Button>
-        <span>{currentIssue.key}</span>
-      </Stack>
-      <div className={detail}>
-        <Stack gap="md">
-          <Field invalid={Boolean(summaryError)} required>
-            <Field.Label>Summary</Field.Label>
-            <Input
-              name="summary"
-              value={summary}
-              onChange={(event) => {
-                setSummary(event.target.value);
-                setSummaryError(null);
-              }}
-            />
-            {summaryError ? <Field.Error>{summaryError}</Field.Error> : null}
-          </Field>
-          <Field>
-            <Field.Label>Description</Field.Label>
-            <Textarea name="description" value={description} onChange={(event) => setDescription(event.target.value)} />
-          </Field>
-          <Stack direction="horizontal" gap="sm">
-            <Button disabled={!mayEdit} type="button" onClick={save}>
-              Save
+    <div className={issueOverlay}>
+      <button aria-label="Close issue" className={issueBackdrop} type="button" onClick={() => navigate(`/p/${currentIssue.projectKey}`)} />
+      <div aria-labelledby="issue-title" className={issueDialog} role="dialog">
+        <div className={issueTop}>
+          <span className={issueCrumb}>
+            {parent ? (
+              <Link to={`/p/${currentIssue.projectKey}/issues/${parent.id}`}>{parent.key}</Link>
+            ) : (
+              "No parent"
+            )}{" "}
+            / {currentIssue.key}
+          </span>
+          <Stack direction="horizontal" gap="sm" align="center">
+            <Select
+              aria-label="Status"
+              disabled={!mayTransition}
+              name="status"
+              value={currentIssue.status}
+              onChange={(event) => data.updateIssue(currentIssue.id, { status: event.target.value })}
+            >
+              {statusOptions.map((status) => (
+                <option key={status.id} value={status.id}>
+                  {status.name}
+                </option>
+              ))}
+            </Select>
+            <Button type="button" variant="ghost" onClick={() => navigate(`/p/${currentIssue.projectKey}`)}>
+              Close
             </Button>
-            <Button disabled={!mayDelete} type="button" variant="dangerOutline" onClick={() => setDeleteOpen(true)}>
-              Delete
-            </Button>
-            <span className={narrowOnly}>
-              <Button type="button" variant="outline" onClick={() => setFieldsOpen(true)}>
-                Fields
-              </Button>
-            </span>
           </Stack>
-          {viewers.length > 0 ? <p>{viewers.join(", ")} {viewers.length === 1 ? "is" : "are"} viewing this issue.</p> : null}
-          <Separator />
-          <Stack gap="sm">
-            <strong>Attachments</strong>
-            {currentIssue.attachments.length === 0 ? <p>No files.</p> : null}
-            {currentIssue.attachments.map((file) => (
-              <Stack key={file.id} direction="horizontal" gap="sm" align="center">
-                <a download={file.name} href={file.dataUrl}>
-                  {file.name}
-                </a>
-                <span>{file.size} B</span>
-                <Button type="button" size="sm" variant="ghost" onClick={() => data.removeAttachment(currentIssue.id, file.id)}>
-                  Remove
+        </div>
+        <Field invalid={Boolean(summaryError)} required>
+          <Input
+            className={issueTitle}
+            id="issue-title"
+            name="summary"
+            value={summary}
+            onBlur={save}
+            onChange={(event) => {
+              setSummary(event.target.value);
+              setSummaryError(null);
+            }}
+          />
+          {summaryError ? <Field.Error>{summaryError}</Field.Error> : null}
+        </Field>
+        {viewers.length > 0 ? (
+          <p>
+            {viewers.join(", ")} {viewers.length === 1 ? "is" : "are"} viewing this issue.
+          </p>
+        ) : null}
+        <div className={detail}>
+          <Stack gap="md">
+            <Field>
+              <Field.Label>Description</Field.Label>
+              <Textarea name="description" value={description} onBlur={save} onChange={(event) => setDescription(event.target.value)} />
+            </Field>
+            <Stack gap="sm">
+              <h2 className={sectionLabel}>Attachments</h2>
+              {currentIssue.attachments.map((file) => (
+                <Stack key={file.id} direction="horizontal" gap="sm" align="center">
+                  <a download={file.name} href={file.dataUrl}>
+                    {file.name}
+                  </a>
+                  <span>{file.size} B</span>
+                  <Button disabled={!mayAttach} type="button" size="sm" variant="ghost" onClick={() => data.removeAttachment(currentIssue.id, file.id)}>
+                    Remove
+                  </Button>
+                </Stack>
+              ))}
+              <div className={dropZone}>
+                <Field>
+                  <Field.Label>Add attachment</Field.Label>
+                  <Input accept="image/*,.txt,.md,.pdf" disabled={!mayAttach} name="attachment" type="file" onChange={onFile} />
+                </Field>
+              </div>
+            </Stack>
+            <Stack gap="sm">
+              <h2 className={sectionLabel}>Subtasks</h2>
+              {childIssues(data, currentIssue.id).map((child) => (
+                <Link key={child.id} to={`/p/${currentIssue.projectKey}/issues/${child.id}`}>
+                  {child.key} {child.summary}
+                </Link>
+              ))}
+              <Field>
+                <Field.Label>New subtask</Field.Label>
+                <Input name="subtask" value={subtask} onChange={(event) => setSubtask(event.target.value)} />
+              </Field>
+              <Button disabled={!mayCreate} type="button" variant="outline" onClick={addSubtask}>
+                Add subtask
+              </Button>
+            </Stack>
+            <Stack gap="sm">
+              <h2 className={sectionLabel}>Linked work items</h2>
+              {currentIssue.links.map((link) => {
+                const target = issueById(data, link.issueId);
+                return (
+                  <Stack key={`${link.type}-${link.issueId}`} direction="horizontal" gap="sm" align="center">
+                    <span>{link.type}</span>
+                    {target ? (
+                      <Link to={`/p/${target.projectKey}/issues/${target.id}`}>
+                        {target.key} {target.summary}
+                      </Link>
+                    ) : (
+                      <span>{link.issueId}</span>
+                    )}
+                    <Button disabled={!mayEdit} type="button" size="sm" variant="ghost" onClick={() => data.removeLink(currentIssue.id, link.issueId)}>
+                      Remove
+                    </Button>
+                  </Stack>
+                );
+              })}
+              <Stack direction="horizontal" gap="sm" align="center">
+                <Select
+                  aria-label="Link type"
+                  disabled={!mayEdit}
+                  name="link-type"
+                  value={linkType}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    if (isLinkType(next)) {
+                      setLinkType(next);
+                    }
+                  }}
+                >
+                  {LINK_TYPES.map((option) => (
+                    <option key={option} value={option}>
+                      {option}
+                    </option>
+                  ))}
+                </Select>
+                <Select
+                  aria-label="Linked issue"
+                  disabled={!mayEdit}
+                  name="link-target"
+                  value={linkTarget}
+                  onChange={(event) => setLinkTarget(event.target.value)}
+                >
+                  <option value="">Choose work</option>
+                  {siblings.map((item) => (
+                    <option key={item.id} value={item.id}>
+                      {item.key}
+                    </option>
+                  ))}
+                </Select>
+                <Button
+                  disabled={!mayEdit || linkTarget.length === 0}
+                  type="button"
+                  variant="outline"
+                  onClick={() => {
+                    if (data.addLink(currentIssue.id, linkType, linkTarget)) {
+                      setLinkTarget("");
+                    }
+                  }}
+                >
+                  Link
                 </Button>
               </Stack>
-            ))}
-            <Field>
-              <Field.Label>Add file</Field.Label>
-              <Input accept="image/*,.txt,.md,.pdf" disabled={!mayAttach} name="attachment" type="file" onChange={onFile} />
-            </Field>
+            </Stack>
+            <Separator />
+            <Stack gap="sm">
+              <h2 className={sectionLabel}>Activity</h2>
+              <div className={activityTabs} role="tablist">
+                {(["all", "comments", "history"] as const).map((tab) => (
+                  <Button
+                    key={tab}
+                    aria-selected={activityTab === tab}
+                    type="button"
+                    variant={activityTab === tab ? "secondary" : "ghost"}
+                    onClick={() => {
+                      if (isActivityTab(tab)) {
+                        setActivityTab(tab);
+                      }
+                    }}
+                  >
+                    {tab === "all" ? "All" : tab === "comments" ? "Comments" : "History"}
+                  </Button>
+                ))}
+              </div>
+              {activityTab !== "comments"
+                ? currentIssue.activity.map((entry) => (
+                    <p key={entry.id}>
+                      {personById(data, entry.actorId)?.name ?? "Someone"} {formatActivity(entry, data.people)}
+                    </p>
+                  ))
+                : null}
+              {activityTab !== "history"
+                ? currentIssue.comments.map((item) => {
+                    const author = personById(data, item.authorId);
+                    return (
+                      <Stack key={item.id} gap="sm">
+                        <Stack direction="horizontal" gap="sm" align="center">
+                          <Avatar alt={author?.name ?? "Unknown"} size="sm" />
+                          <span>{author?.name ?? "Unknown"}</span>
+                        </Stack>
+                        <p>{item.body}</p>
+                      </Stack>
+                    );
+                  })
+                : null}
+              <div className={chipRow}>
+                {QUICK_COMMENTS.map((text) => (
+                  <Button key={text} disabled={!mayComment} type="button" size="sm" variant="outline" onClick={() => setComment(text)}>
+                    {text}
+                  </Button>
+                ))}
+              </div>
+              <Field invalid={Boolean(commentError)}>
+                <Field.Label>Comment</Field.Label>
+                <Textarea
+                  name="comment"
+                  placeholder="Add a comment..."
+                  value={comment}
+                  onChange={(event) => {
+                    setComment(event.target.value);
+                    setCommentError(null);
+                  }}
+                />
+                {commentError ? <Field.Error>{commentError}</Field.Error> : null}
+              </Field>
+              <Button disabled={!mayComment} type="button" variant="secondary" onClick={submitComment}>
+                Add comment
+              </Button>
+            </Stack>
+            <Stack direction="horizontal" gap="sm">
+              <Button disabled={!mayDelete} type="button" variant="dangerOutline" onClick={() => setDeleteOpen(true)}>
+                Delete
+              </Button>
+              <span className={narrowOnly}>
+                <Button type="button" variant="outline" onClick={() => setFieldsOpen(true)}>
+                  Details
+                </Button>
+              </span>
+            </Stack>
           </Stack>
-          <Separator />
-          <Stack gap="sm">
-            <strong>Subtasks</strong>
-            {childIssues(data, currentIssue.id).length === 0 ? <p>No subtasks.</p> : null}
-            {childIssues(data, currentIssue.id).map((child) => (
-              <Link key={child.id} to={`/p/${currentIssue.projectKey}/issues/${child.id}`}>
-                {child.key} {child.summary}
-              </Link>
-            ))}
-            <Field>
-              <Field.Label>New subtask</Field.Label>
-              <Input name="subtask" value={subtask} onChange={(event) => setSubtask(event.target.value)} />
-            </Field>
-            <Button disabled={!mayCreate} type="button" variant="outline" onClick={addSubtask}>
-              Add subtask
-            </Button>
-          </Stack>
-          <Separator />
-          <Stack gap="sm">
-            <strong>Activity</strong>
-            {currentIssue.activity.length === 0 ? <p>No activity yet.</p> : null}
-            {currentIssue.activity.map((entry) => (
-              <p key={entry.id}>
-                {personById(data, entry.actorId)?.name ?? "Someone"} {formatActivity(entry, data.people)}
-              </p>
-            ))}
-          </Stack>
-          <Separator />
-          <Stack gap="sm">
-            <strong>Comments</strong>
-            {currentIssue.comments.length === 0 ? <p>No comments yet.</p> : null}
-            {currentIssue.comments.map((item) => {
-              const author = personById(data, item.authorId);
-              return (
-                <Stack key={item.id} gap="sm">
-                  <Stack direction="horizontal" gap="sm" align="center">
-                    <Avatar alt={author?.name ?? "Unknown"} size="sm" />
-                    <span>{author?.name ?? "Unknown"}</span>
-                  </Stack>
-                  <p>{item.body}</p>
-                  <Separator />
-                </Stack>
-              );
-            })}
-            <Field invalid={Boolean(commentError)}>
-              <Field.Label>Comment</Field.Label>
-              <Textarea
-                name="comment"
-                value={comment}
-                onChange={(event) => {
-                  setComment(event.target.value);
-                  setCommentError(null);
-                }}
-              />
-              {commentError ? <Field.Error>{commentError}</Field.Error> : null}
-            </Field>
-            <Button disabled={!mayComment} type="button" variant="secondary" onClick={submitComment}>
-              Add comment
-            </Button>
-          </Stack>
-        </Stack>
-        <aside className={sidePanel}>{fieldPanel}</aside>
+          <aside className={sidePanel}>{fieldPanel}</aside>
+        </div>
       </div>
       <Drawer open={fieldsOpen} side="right" onOpenChange={setFieldsOpen}>
         <Drawer.Content>
           <Drawer.Close />
           <Drawer.Header>
-            <Drawer.Title>Fields</Drawer.Title>
+            <Drawer.Title>Details</Drawer.Title>
             <Drawer.Description>{currentIssue.key}</Drawer.Description>
           </Drawer.Header>
           <Drawer.Body>{fieldPanel}</Drawer.Body>
@@ -306,7 +556,7 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
           <Dialog.Close />
           <Dialog.Header>
             <Dialog.Title>Delete {currentIssue.key}?</Dialog.Title>
-            <Dialog.Description>This removes the issue from the board.</Dialog.Description>
+            <Dialog.Description>This removes the work item.</Dialog.Description>
           </Dialog.Header>
           <Dialog.Footer>
             <Button type="button" variant="outline" onClick={() => setDeleteOpen(false)}>
@@ -325,6 +575,6 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
           </Dialog.Footer>
         </Dialog.Content>
       </Dialog>
-    </Stack>
+    </div>
   );
 }

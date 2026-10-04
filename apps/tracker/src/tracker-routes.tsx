@@ -7,7 +7,9 @@ import { ProjectBoard } from "./features/project-board";
 import { ProjectList } from "./features/project-list";
 import { ProjectSection } from "./features/project-section";
 import { ProjectSettings } from "./features/project-settings";
+import { ProjectSummary } from "./features/project-summary";
 import { AppShell } from "./layout/app-shell";
+import { padded } from "./layout/shell.css";
 
 export function TrackerRoutes() {
   return (
@@ -17,6 +19,7 @@ export function TrackerRoutes() {
         <Route path="inbox" element={<Inbox />} />
         <Route path="p/:projectKey" element={<ProjectSection />}>
           <Route index element={<BoardRoute />} />
+          <Route path="summary" element={<SummaryRoute />} />
           <Route path="backlog" element={<BacklogRoute />} />
           <Route path="list" element={<ListRoute />} />
           <Route path="settings" element={<SettingsRoute />} />
@@ -27,9 +30,18 @@ export function TrackerRoutes() {
   );
 }
 
+function SummaryRoute() {
+  const { projectKey = "" } = useParams();
+  return <ProjectSummary projectKey={projectKey} />;
+}
+
 function BacklogRoute() {
   const { projectKey = "" } = useParams();
-  return <ProjectBacklog projectKey={projectKey} />;
+  return (
+    <div className={padded}>
+      <ProjectBacklog projectKey={projectKey} />
+    </div>
+  );
 }
 
 function BoardRoute() {
@@ -39,7 +51,11 @@ function BoardRoute() {
 
 function SettingsRoute() {
   const { projectKey = "" } = useParams();
-  return <ProjectSettings projectKey={projectKey} />;
+  return (
+    <div className={padded}>
+      <ProjectSettings projectKey={projectKey} />
+    </div>
+  );
 }
 
 function ListRoute() {

@@ -12,10 +12,22 @@ export type Person = {
   name: string;
 };
 
+export const BOARD_TYPES = ["scrum", "kanban"] as const;
+export type BoardType = (typeof BOARD_TYPES)[number];
+
 export type Project = {
   key: string;
   name: string;
   description: string;
+  boardType: BoardType;
+};
+
+export const LINK_TYPES = ["relates", "blocks", "blocked_by", "duplicates"] as const;
+export type LinkType = (typeof LINK_TYPES)[number];
+
+export type IssueLink = {
+  type: LinkType;
+  issueId: string;
 };
 
 export const SPRINT_STATES = ["future", "active", "closed"] as const;
@@ -60,7 +72,10 @@ export const ACTIVITY_FIELDS = [
   "labels",
   "points",
   "parent",
-  "attachment"
+  "attachment",
+  "due",
+  "start",
+  "link"
 ] as const;
 
 export type ActivityField = (typeof ACTIVITY_FIELDS)[number];
@@ -91,6 +106,10 @@ export type Issue = {
   labels: string[];
   storyPoints: number | null;
   parentId: string | null;
+  dueDate: string | null;
+  startDate: string | null;
+  watchers: string[];
+  links: IssueLink[];
   createdAt: string;
   updatedAt: string;
   comments: Comment[];
@@ -176,6 +195,10 @@ export type CreateIssueInput = {
   priority: Priority;
   sprintId?: string | null;
   parentId?: string | null;
+  status?: string;
+  assigneeId?: string;
+  labels?: string[];
+  dueDate?: string | null;
 };
 
 export type IssuePatch = {
@@ -188,6 +211,8 @@ export type IssuePatch = {
   labels?: string[];
   storyPoints?: number | null;
   parentId?: string | null;
+  dueDate?: string | null;
+  startDate?: string | null;
 };
 
 export type IssueFilter = {
@@ -211,6 +236,14 @@ export function isPriority(value: string): value is Priority {
 
 export function isActivityField(value: string): value is ActivityField {
   return (ACTIVITY_FIELDS as readonly string[]).includes(value);
+}
+
+export function isBoardType(value: string): value is BoardType {
+  return (BOARD_TYPES as readonly string[]).includes(value);
+}
+
+export function isLinkType(value: string): value is LinkType {
+  return (LINK_TYPES as readonly string[]).includes(value);
 }
 
 export function isSprintState(value: string): value is SprintState {

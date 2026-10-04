@@ -4,7 +4,10 @@ import { defaultWorkflow } from "./workflow";
 
 export const CURRENT_ACTOR_ID = "ada";
 
-type DraftIssue = Omit<Issue, "activity" | "sprintId" | "rank" | "labels" | "storyPoints" | "parentId" | "attachments">;
+type DraftIssue = Omit<
+  Issue,
+  "activity" | "sprintId" | "rank" | "labels" | "storyPoints" | "parentId" | "attachments" | "dueDate" | "startDate" | "watchers" | "links"
+>;
 
 function draftTracker(): { projects: TrackerData["projects"]; people: TrackerData["people"]; issues: DraftIssue[] } {
   return {
@@ -12,12 +15,14 @@ function draftTracker(): { projects: TrackerData["projects"]; people: TrackerDat
       {
         key: "WEB",
         name: "Website",
-        description: "Marketing site and docs"
+        description: "Marketing site and docs",
+        boardType: "kanban"
       },
       {
         key: "API",
         name: "Platform API",
-        description: "Public API and auth"
+        description: "Public API and auth",
+        boardType: "kanban"
       }
     ],
     people: [
@@ -180,6 +185,10 @@ export function seedTracker(): TrackerData {
       labels: issue.id === "WEB-1" ? ["pricing"] : [],
       storyPoints: issue.id === "WEB-1" ? 5 : issue.id === "WEB-2" ? 2 : null,
       parentId: null,
+      dueDate: issue.id === "WEB-1" ? "2026-10-10" : null,
+      startDate: null,
+      watchers: [issue.assigneeId],
+      links: [],
       attachments: []
     })),
     savedFilters: [],

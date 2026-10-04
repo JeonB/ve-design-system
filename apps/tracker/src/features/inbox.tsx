@@ -1,12 +1,14 @@
 import { Badge, Button, Card, Stack } from "@ve/ui";
 import { Link } from "react-router";
 import { useTracker } from "../domain/tracker-context";
+import { padded } from "../layout/shell.css";
 
 export function Inbox() {
   const data = useTracker();
   const notices = data.notices.filter((notice) => notice.recipientId === data.actorId).slice().reverse();
 
   return (
+    <div className={padded}>
     <Stack gap="md">
       <Stack direction="horizontal" align="center" justify="between">
         <h1>Inbox</h1>
@@ -36,5 +38,6 @@ export function Inbox() {
         </Card>
       ))}
     </Stack>
+    </div>
   );
 }

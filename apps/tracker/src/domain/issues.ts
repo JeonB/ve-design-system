@@ -5,6 +5,7 @@ import type {
   Issue,
   IssueFilter,
   IssuePatch,
+  LinkType,
   Person,
   Project,
   TrackerData
@@ -57,17 +58,21 @@ export function appendIssue(
     key: `${projectKey}-${number}`,
     projectKey,
     type: input.type,
-    status: "todo",
+    status: input.status ?? "todo",
     priority: input.priority,
     summary: input.summary.trim(),
     description: input.description.trim(),
-    assigneeId: actorId,
+    assigneeId: input.assigneeId ?? actorId,
     reporterId: actorId,
     sprintId: input.sprintId ?? null,
     rank: number,
-    labels: [],
+    labels: input.labels ?? [],
     storyPoints: null,
     parentId: input.parentId ?? null,
+    dueDate: input.dueDate ?? null,
+    startDate: null,
+    watchers: [actorId],
+    links: [],
     attachments: [],
     createdAt: now,
     updatedAt: now,
@@ -99,7 +104,9 @@ const PATCH_FIELDS: Array<{ key: keyof IssuePatch; field: ActivityField }> = [
   { key: "assigneeId", field: "assignee" },
   { key: "labels", field: "labels" },
   { key: "storyPoints", field: "points" },
-  { key: "parentId", field: "parent" }
+  { key: "parentId", field: "parent" },
+  { key: "dueDate", field: "due" },
+  { key: "startDate", field: "start" }
 ];
 
 function readPatchValue(issue: Issue, key: keyof IssuePatch): string {
@@ -110,6 +117,10 @@ function readPatchValue(issue: Issue, key: keyof IssuePatch): string {
       return issue.storyPoints === null ? "" : String(issue.storyPoints);
     case "parentId":
       return issue.parentId ?? "";
+    case "dueDate":
+      return issue.dueDate ?? "";
+    case "startDate":
+      return issue.startDate ?? "";
     case "summary":
     case "description":
     case "type":
@@ -247,6 +258,102 @@ export function matchesQuickFilter(issue: Issue, query: string, onlyAssigneeId: 
     return true;
   }
   return issue.summary.toLowerCase().includes(needle) || issue.key.toLowerCase().includes(needle);
+}
+
+export function toggleWatch(data: TrackerData, issueId: string, personId: string): TrackerData {
+  return {
+    ...data,
+    issues: data.issues.map((issue) => {
+      if (issue.id !== issueId) {
+        return issue;
+      }
+      const watching = issue.watchers.includes(personId);
+      return {
+        ...issue,
+        watchers: watching ? issue.watchers.filter((id) => id !== personId) : [...issue.watchers, personId]
+      };
+    })
+  };
+}
+
+function inverseLink(type: LinkType): LinkType {
+  switch (type) {
+    case "blocks":
+      return "blocked_by";
+    case "blocked_by":
+      return "blocks";
+    case "relates":
+    case "duplicates":
+      return type;
+    default: {
+      const exhaustive: never = type;
+      return exhaustive;
+    }
+  }
+}
+
+function withLinkActivity(issue: Issue, actorId: string, now: string, from: string, to: string): Issue {
+  return {
+    ...issue,
+    updatedAt: now,
+    activity: [...issue.activity, nextActivity(issue, { actorId, at: now, field: "link", from, to })]
+  };
+}
+
+export function addLink(
+  data: TrackerData,
+  issueId: string,
+  type: LinkType,
+  targetId: string,
+  now: string,
+  actorId: string
+): { data: TrackerData } | { error: string } {
+  if (issueId === targetId) {
+    return { error: "An issue cannot link to itself." };
+  }
+  const source = issueById(data, issueId);
+  const target = issueById(data, targetId);
+  if (!source || !target) {
+    return { error: "Choose an existing issue." };
+  }
+  if (source.links.some((link) => link.issueId === targetId)) {
+    return { error: "These issues are already linked." };
+  }
+  return {
+    data: {
+      ...data,
+      issues: data.issues.map((issue) => {
+        if (issue.id === issueId) {
+          return withLinkActivity({ ...issue, links: [...issue.links, { type, issueId: targetId }] }, actorId, now, "", `${type} ${target.key}`);
+        }
+        if (issue.id === targetId) {
+          const back = inverseLink(type);
+          return withLinkActivity({ ...issue, links: [...issue.links, { type: back, issueId }] }, actorId, now, "", `${back} ${source.key}`);
+        }
+        return issue;
+      })
+    }
+  };
+}
+
+export function removeLink(data: TrackerData, issueId: string, targetId: string, now: string, actorId: string): TrackerData {
+  const source = issueById(data, issueId);
+  const target = issueById(data, targetId);
+  if (!source || !target) {
+    return data;
+  }
+  return {
+    ...data,
+    issues: data.issues.map((issue) => {
+      if (issue.id === issueId) {
+        return withLinkActivity({ ...issue, links: issue.links.filter((link) => link.issueId !== targetId) }, actorId, now, target.key, "");
+      }
+      if (issue.id === targetId) {
+        return withLinkActivity({ ...issue, links: issue.links.filter((link) => link.issueId !== issueId) }, actorId, now, source.key, "");
+      }
+      return issue;
+    })
+  };
 }
 
 export function filterIssues(issues: Issue[], filter: IssueFilter): Issue[] {

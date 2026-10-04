@@ -1,22 +1,35 @@
-import { useState } from "react";
-import { Alert, Button, Stack, Tabs } from "@ve/ui";
-import { Outlet, useMatch, useNavigate, useParams } from "react-router";
+import { Alert } from "@ve/ui";
+import { Link, Outlet, useMatch, useParams } from "react-router";
 import { projectByKey } from "../domain/issues";
-import { can } from "../domain/permissions";
-import { activeSprint } from "../domain/sprints";
 import { useTracker } from "../domain/tracker-context";
-import { CreateIssueDialog } from "./create-issue-dialog";
+import { ProjectBoard } from "./project-board";
+import {
+  space,
+  spaceBody,
+  spaceHeader,
+  spaceTitle,
+  viewLink,
+  viewLinkActive,
+  viewNav
+} from "../layout/shell.css";
+
+const VIEWS = [
+  { id: "summary", label: "Summary", suffix: "/summary" },
+  { id: "list", label: "List", suffix: "/list" },
+  { id: "board", label: "Board", suffix: "" },
+  { id: "backlog", label: "Backlog", suffix: "/backlog" },
+  { id: "settings", label: "Settings", suffix: "/settings" }
+] as const;
 
 export function ProjectSection() {
   const { projectKey = "" } = useParams();
   const data = useTracker();
-  const navigate = useNavigate();
   const project = projectByKey(data, projectKey);
+  const summaryMatch = useMatch("/p/:projectKey/summary");
   const listMatch = useMatch("/p/:projectKey/list");
   const backlogMatch = useMatch("/p/:projectKey/backlog");
-  const detailMatch = useMatch("/p/:projectKey/issues/:issueId");
   const settingsMatch = useMatch("/p/:projectKey/settings");
-  const [createOpen, setCreateOpen] = useState(false);
+  const detailMatch = useMatch("/p/:projectKey/issues/:issueId");
 
   if (!project) {
     return (
@@ -26,63 +39,31 @@ export function ProjectSection() {
     );
   }
 
-  const tab = backlogMatch ? "backlog" : listMatch ? "list" : settingsMatch ? "settings" : "board";
-  const mayCreate = can(data, data.actorId, project.key, "create");
+  const tab = summaryMatch ? "summary" : listMatch ? "list" : backlogMatch ? "backlog" : settingsMatch ? "settings" : "board";
 
   return (
-    <Stack gap="md">
-      <Stack direction="horizontal" align="center" justify="between">
-        <h1>
-          {project.name}{" "}
-          <span>{project.key}</span>
-        </h1>
-        {detailMatch ? null : (
-          <Button disabled={!mayCreate} type="button" onClick={() => setCreateOpen(true)}>
-            Create issue
-          </Button>
-        )}
-      </Stack>
-      {detailMatch ? null : (
-        <Tabs
-          value={tab}
-          onValueChange={(value) => {
-            if (value === "backlog") {
-              navigate(`/p/${project.key}/backlog`);
-              return;
-            }
-            if (value === "list") {
-              navigate(`/p/${project.key}/list`);
-              return;
-            }
-            if (value === "settings") {
-              navigate(`/p/${project.key}/settings`);
-              return;
-            }
-            navigate(`/p/${project.key}`);
-          }}
-        >
-          <Tabs.List aria-label="Project views">
-            <Tabs.Trigger value="backlog">Backlog</Tabs.Trigger>
-            <Tabs.Trigger value="board">Board</Tabs.Trigger>
-            <Tabs.Trigger value="list">Issues</Tabs.Trigger>
-            <Tabs.Trigger value="settings">Settings</Tabs.Trigger>
-          </Tabs.List>
-        </Tabs>
-      )}
-      <Outlet />
-      <CreateIssueDialog
-        open={createOpen}
-        onCreate={(input) => {
-          const sprintId = tab === "board" ? activeSprint(data, project.key)?.id ?? null : null;
-          const issue = data.createIssue(project.key, { ...input, sprintId });
-          if (!issue) {
-            return;
-          }
-          setCreateOpen(false);
-          navigate(`/p/${project.key}/issues/${issue.id}`);
-        }}
-        onOpenChange={setCreateOpen}
-      />
-    </Stack>
+    <div className={space}>
+      <header className={spaceHeader}>
+        <h1 className={spaceTitle}>{project.name}</h1>
+      </header>
+      <nav aria-label="Space views" className={viewNav}>
+        {VIEWS.map((view) => {
+          const active = view.id === tab;
+          return (
+            <Link
+              key={view.id}
+              className={active ? `${viewLink} ${viewLinkActive}` : viewLink}
+              to={`/p/${project.key}${view.suffix}`}
+            >
+              {view.label}
+            </Link>
+          );
+        })}
+      </nav>
+      <div className={spaceBody}>
+        {detailMatch ? <ProjectBoard projectKey={project.key} /> : null}
+        <Outlet />
+      </div>
+    </div>
   );
 }

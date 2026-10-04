@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { appendIssue, filterIssues, issuesByProject, matchesQuickFilter, updateIssue } from "./issues";
+import { addLink, appendIssue, filterIssues, issuesByProject, matchesQuickFilter, updateIssue } from "./issues";
 import { seedTracker } from "./seed";
 
 describe("issues", () => {
@@ -66,6 +66,21 @@ describe("issues", () => {
     );
     expect(result.issue.parentId).toBe("WEB-1");
     expect(result.issue.key).toBe("WEB-6");
+  });
+
+  it("칸반 스페이스는 보드 타입을 갖고 이슈 연결은 양쪽 이력에 남는다", () => {
+    const data = seedTracker();
+    expect(data.projects.map((project) => project.boardType)).toEqual(["kanban", "kanban"]);
+    const linked = addLink(data, "WEB-1", "blocks", "WEB-2", "2026-10-04T09:00:00.000Z", "ada");
+    if ("error" in linked) {
+      throw new Error(linked.error);
+    }
+    const source = linked.data.issues.find((issue) => issue.id === "WEB-1");
+    const target = linked.data.issues.find((issue) => issue.id === "WEB-2");
+    expect(source?.links).toEqual([{ type: "blocks", issueId: "WEB-2" }]);
+    expect(target?.links).toEqual([{ type: "blocked_by", issueId: "WEB-1" }]);
+    const dated = updateIssue(linked.data, "WEB-1", { dueDate: "2026-10-10" }, "2026-10-04T10:00:00.000Z", "ada");
+    expect(dated.issues.find((issue) => issue.id === "WEB-1")?.dueDate).toBe("2026-10-10");
   });
 
   it("보드 빠른 필터는 담당자와 키를 함께 본다", () => {

@@ -1,12 +1,15 @@
 import {
   isActivityField,
+  isBoardType,
   isIssueType,
+  isLinkType,
   isPriority,
   isSprintState,
   type ActivityEntry,
   type Attachment,
   type Comment,
   type Issue,
+  type IssueLink,
   type MailNotice,
   type Membership,
   type Person,
@@ -217,6 +220,10 @@ function readIssue(value: unknown): ReadIssue | null {
       labels,
       storyPoints,
       parentId: value.parentId === undefined || value.parentId === null ? null : isString(value.parentId) ? value.parentId : null,
+      dueDate: isString(value.dueDate) ? value.dueDate : null,
+      startDate: isString(value.startDate) ? value.startDate : null,
+      watchers: readWatchers(value.watchers),
+      links: readLinks(value.links),
       createdAt: value.createdAt,
       updatedAt: value.updatedAt,
       comments,
@@ -249,11 +256,33 @@ function readSprint(value: unknown): Sprint | null {
   };
 }
 
+function readWatchers(value: unknown): string[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  return value.filter((item): item is string => typeof item === "string");
+}
+
+function readLinks(value: unknown): IssueLink[] {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+  const links: IssueLink[] = [];
+  for (const item of value) {
+    if (!isRecord(item) || !isString(item.type) || !isLinkType(item.type) || !isString(item.issueId)) {
+      continue;
+    }
+    links.push({ type: item.type, issueId: item.issueId });
+  }
+  return links;
+}
+
 function readProject(value: unknown): Project | null {
   if (!isRecord(value) || !isString(value.key) || !isString(value.name) || !isString(value.description)) {
     return null;
   }
-  return { key: value.key, name: value.name, description: value.description };
+  const boardType = isString(value.boardType) && isBoardType(value.boardType) ? value.boardType : "kanban";
+  return { key: value.key, name: value.name, description: value.description, boardType };
 }
 
 function readChoice<T extends string>(value: unknown, guard: (item: string) => item is T): T | "all" | null {
