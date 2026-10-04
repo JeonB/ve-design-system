@@ -1,13 +1,14 @@
-import { createContext, useCallback, useContext, useMemo, useRef, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useToast } from "@ve/ui";
 import { addAttachment, removeAttachment, type AttachmentInput } from "./attachments";
 import { deleteFilter, saveFilter, type SaveFilterInput } from "./filters";
-import { addComment, appendIssue, deleteIssue, updateIssue } from "./issues";
+import { addComment, appendIssue, deleteIssue, issueById, updateIssue } from "./issues";
+import { appendNotices, freshPresence, markAllNoticesRead, markNoticeRead, noticesForComment, noticesForUpdate, type Presence } from "./mail";
 import { ACTOR_STORAGE_KEY, can, setMembership } from "./permissions";
 import { assignSprint, completeSprint, createSprint, startSprint } from "./sprints";
 import type { CreateIssueInput, Issue, IssuePatch, ProjectAction, ProjectRole, TrackerData } from "./issue.types";
 import { CURRENT_ACTOR_ID } from "./seed";
-import { loadTracker, saveTracker } from "./storage";
+import { TRACKER_STORAGE_KEY, loadTracker, saveTracker } from "./storage";
 import { addWorkflowStatus, addWorkflowTransition, canTransition, removeWorkflowStatus, removeWorkflowTransition, statusName, workflowFor, type StatusCategory } from "./workflow";
 
 type TrackerContextValue = TrackerData & {
@@ -30,7 +31,22 @@ type TrackerContextValue = TrackerData & {
   deleteFilter: (filterId: string) => void;
   addAttachment: (issueId: string, input: AttachmentInput) => boolean;
   removeAttachment: (issueId: string, attachmentId: string) => void;
+  presence: Presence[];
+  announce: (issueId: string) => void;
+  markNoticeRead: (noticeId: string) => void;
+  markAllNoticesRead: () => void;
 };
+
+const TRACKER_CHANNEL = "ve-tracker";
+
+function publish(message: { type: "data" } | { type: "presence"; actorId: string; issueId: string; at: number }) {
+  if (typeof BroadcastChannel === "undefined") {
+    return;
+  }
+  const channel = new BroadcastChannel(TRACKER_CHANNEL);
+  channel.postMessage(message);
+  channel.close();
+}
 
 const TrackerContext = createContext<TrackerContextValue | null>(null);
 
@@ -50,10 +66,51 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     []
   );
 
+  const [presence, setPresence] = useState<Presence[]>([]);
+
   const commit = useCallback((next: TrackerData) => {
     dataRef.current = next;
     setData(next);
     saveTracker(window.localStorage, next);
+    publish({ type: "data" });
+  }, []);
+
+  useEffect(() => {
+    const applyRemote = () => {
+      const next = loadTracker(window.localStorage);
+      dataRef.current = next;
+      setData(next);
+    };
+    const onStorage = (event: StorageEvent) => {
+      if (event.key === TRACKER_STORAGE_KEY) {
+        applyRemote();
+      }
+    };
+    window.addEventListener("storage", onStorage);
+    if (typeof BroadcastChannel === "undefined") {
+      return () => window.removeEventListener("storage", onStorage);
+    }
+    const channel = new BroadcastChannel(TRACKER_CHANNEL);
+    const onMessage = (event: MessageEvent<{ type?: string; actorId?: string; issueId?: string; at?: number }>) => {
+      if (event.data?.type === "data") {
+        applyRemote();
+        return;
+      }
+      if (event.data?.type === "presence" && event.data.actorId && event.data.issueId && typeof event.data.at === "number") {
+        const next = { actorId: event.data.actorId, issueId: event.data.issueId, at: event.data.at };
+        setPresence((current) => freshPresence([...current.filter((item) => item.actorId !== next.actorId), next], Date.now()));
+      }
+    };
+    channel.addEventListener("message", onMessage);
+    const timer = window.setInterval(() => {
+      setPresence((current) => freshPresence(current, Date.now()));
+    }, 5000);
+    return () => {
+      window.removeEventListener("storage", onStorage);
+      channel.removeEventListener("message", onMessage);
+      channel.close();
+      window.clearInterval(timer);
+    };
   }, []);
 
   const createIssue = useCallback(
@@ -90,7 +147,10 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
         refuse();
         return;
       }
-      commit(updateIssue(dataRef.current, issueId, patch, new Date().toISOString(), actorRef.current));
+      const now = new Date().toISOString();
+      const next = updateIssue(dataRef.current, issueId, patch, now, actorRef.current);
+      const after = issueById(next, issueId);
+      commit(after ? appendNotices(next, noticesForUpdate(next, current, after, actorRef.current, now)) : next);
       if (statusChanged && patch.status && !edits) {
         toast({ title: `${current.key} moved to ${statusName(dataRef.current, current.projectKey, patch.status)}`, variant: "success" });
         return;
@@ -123,7 +183,10 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       if (body.trim().length === 0) {
         return false;
       }
-      commit(addComment(dataRef.current, issueId, body, actorRef.current, new Date().toISOString()));
+      const now = new Date().toISOString();
+      const next = addComment(dataRef.current, issueId, body, actorRef.current, now);
+      const after = issueById(next, issueId);
+      commit(after ? appendNotices(next, noticesForComment(next, after, body, actorRef.current, now)) : next);
       toast({ title: "Comment added", variant: "success" });
       return true;
     },
@@ -337,6 +400,21 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     [allowed, commit, refuse]
   );
 
+  const announce = useCallback((issueId: string) => {
+    publish({ type: "presence", actorId: actorRef.current, issueId, at: Date.now() });
+  }, []);
+
+  const readNotice = useCallback(
+    (noticeId: string) => {
+      commit(markNoticeRead(dataRef.current, noticeId, actorRef.current));
+    },
+    [commit]
+  );
+
+  const readAllNotices = useCallback(() => {
+    commit(markAllNoticesRead(dataRef.current, actorRef.current));
+  }, [commit]);
+
   const value = useMemo(
     () => ({
       ...data,
@@ -358,10 +436,15 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       addWorkflowStatus: createStatus,
       removeWorkflowStatus: deleteStatus,
       addWorkflowTransition: createTransition,
-      removeWorkflowTransition: deleteTransition
+      removeWorkflowTransition: deleteTransition,
+      presence,
+      announce,
+      markNoticeRead: readNotice,
+      markAllNoticesRead: readAllNotices
     }),
     [
       actorId,
+      announce,
       addSprint,
       attach,
       beginSprint,
@@ -377,6 +460,9 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       detach,
       finishSprint,
       moveToSprint,
+      presence,
+      readAllNotices,
+      readNotice,
       remove,
       removeFilter,
       storeFilter,

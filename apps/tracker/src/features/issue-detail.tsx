@@ -1,4 +1,4 @@
-import { useState, type ChangeEvent } from "react";
+import { useEffect, useState, type ChangeEvent } from "react";
 import {
   Alert,
   Avatar,
@@ -28,6 +28,11 @@ type IssueDetailProps = {
 export function IssueDetail({ issueId }: IssueDetailProps) {
   const data = useTracker();
   const navigate = useNavigate();
+  useEffect(() => {
+    data.announce(issueId);
+    const timer = window.setInterval(() => data.announce(issueId), 4000);
+    return () => window.clearInterval(timer);
+  }, [data.announce, issueId]);
   const issue = issueById(data, issueId);
   const [summary, setSummary] = useState(issue?.summary ?? "");
   const [description, setDescription] = useState(issue?.description ?? "");
@@ -71,6 +76,9 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
   const mayComment = can(data, data.actorId, currentIssue.projectKey, "comment");
   const mayAttach = can(data, data.actorId, currentIssue.projectKey, "attach");
   const mayCreate = can(data, data.actorId, currentIssue.projectKey, "create");
+  const viewers = data.presence
+    .filter((item) => item.issueId === currentIssue.id && item.actorId !== data.actorId)
+    .map((item) => personById(data, item.actorId)?.name ?? item.actorId);
   const reporter = personById(data, currentIssue.reporterId);
 
   const save = () => {
@@ -199,6 +207,7 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
               </Button>
             </span>
           </Stack>
+          {viewers.length > 0 ? <p>{viewers.join(", ")} {viewers.length === 1 ? "is" : "are"} viewing this issue.</p> : null}
           <Separator />
           <Stack gap="sm">
             <strong>Attachments</strong>

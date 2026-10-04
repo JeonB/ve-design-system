@@ -132,6 +132,21 @@ export type Membership = {
   role: ProjectRole;
 };
 
+export const NOTIFICATION_KINDS = ["assigned", "comment", "transition", "mention"] as const;
+export type NotificationKind = (typeof NOTIFICATION_KINDS)[number];
+
+export type MailNotice = {
+  id: string;
+  recipientId: string;
+  issueId: string;
+  issueKey: string;
+  kind: NotificationKind;
+  subject: string;
+  body: string;
+  createdAt: string;
+  read: boolean;
+};
+
 export type SavedFilter = {
   id: string;
   projectKey: string;
@@ -151,6 +166,7 @@ export type TrackerData = {
   savedFilters: SavedFilter[];
   memberships: Membership[];
   workflows: Workflow[];
+  notices: MailNotice[];
 };
 
 export type CreateIssueInput = {

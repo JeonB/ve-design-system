@@ -47,6 +47,14 @@ export function AppShell() {
                 </option>
               ))}
             </Select>
+            <Button asChild variant="ghost">
+              <Link to="/inbox">
+                Inbox
+                {data.notices.some((notice) => notice.recipientId === data.actorId && !notice.read)
+                  ? ` (${data.notices.filter((notice) => notice.recipientId === data.actorId && !notice.read).length})`
+                  : ""}
+              </Link>
+            </Button>
             <ThemeToggle />
           </Stack>
         </header>

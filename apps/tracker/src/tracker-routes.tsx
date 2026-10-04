@@ -1,4 +1,5 @@
 import { Route, Routes, useParams } from "react-router";
+import { Inbox } from "./features/inbox";
 import { IssueDetail } from "./features/issue-detail";
 import { IssueList } from "./features/issue-list";
 import { ProjectBacklog } from "./features/project-backlog";
@@ -13,6 +14,7 @@ export function TrackerRoutes() {
     <Routes>
       <Route element={<AppShell />}>
         <Route index element={<ProjectList />} />
+        <Route path="inbox" element={<Inbox />} />
         <Route path="p/:projectKey" element={<ProjectSection />}>
           <Route index element={<BoardRoute />} />
           <Route path="backlog" element={<BacklogRoute />} />

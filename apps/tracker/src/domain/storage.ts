@@ -7,6 +7,7 @@ import {
   type Attachment,
   type Comment,
   type Issue,
+  type MailNotice,
   type Membership,
   type Person,
   type Project,
@@ -15,6 +16,7 @@ import {
   type TrackerData,
   type Workflow
 } from "./issue.types";
+import { isNotificationKind } from "./mail";
 import { defaultMemberships } from "./permissions";
 import { seedTracker } from "./seed";
 import { defaultWorkflow, isStatusCategory } from "./workflow";
@@ -332,6 +334,35 @@ function readWorkflow(value: unknown): Workflow | null {
   return { projectKey: value.projectKey, statuses, transitions };
 }
 
+function readNotice(value: unknown): MailNotice | null {
+  if (
+    !isRecord(value) ||
+    !isString(value.id) ||
+    !isString(value.recipientId) ||
+    !isString(value.issueId) ||
+    !isString(value.issueKey) ||
+    !isString(value.kind) ||
+    !isNotificationKind(value.kind) ||
+    !isString(value.subject) ||
+    !isString(value.body) ||
+    !isString(value.createdAt) ||
+    typeof value.read !== "boolean"
+  ) {
+    return null;
+  }
+  return {
+    id: value.id,
+    recipientId: value.recipientId,
+    issueId: value.issueId,
+    issueKey: value.issueKey,
+    kind: value.kind,
+    subject: value.subject,
+    body: value.body,
+    createdAt: value.createdAt,
+    read: value.read
+  };
+}
+
 function readPerson(value: unknown): Person | null {
   if (!isRecord(value) || !isString(value.id) || !isString(value.name)) {
     return null;
@@ -464,7 +495,21 @@ export function parseTracker(raw: string): TrackerData | null {
     }
   }
 
-  return { projects, people, sprints, issues, savedFilters, memberships, workflows };
+  const notices: MailNotice[] = [];
+  if (data.notices !== undefined) {
+    if (!Array.isArray(data.notices)) {
+      return null;
+    }
+    for (const item of data.notices) {
+      const notice = readNotice(item);
+      if (!notice) {
+        return null;
+      }
+      notices.push(notice);
+    }
+  }
+
+  return { projects, people, sprints, issues, savedFilters, memberships, workflows, notices };
 }
 
 export function serializeTracker(data: TrackerData): string {
