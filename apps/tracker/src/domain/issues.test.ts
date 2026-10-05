@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addLink, appendIssue, filterIssues, issuesByProject, matchesQuickFilter, updateIssue } from "./issues";
+import { addLink, appendIssue, bulkUpdateIssues, filterIssues, issuesByProject, matchesQuickFilter, updateIssue } from "./issues";
 import { seedTracker } from "./seed";
 
 describe("issues", () => {
@@ -81,6 +81,19 @@ describe("issues", () => {
     expect(target?.links).toEqual([{ type: "blocked_by", issueId: "WEB-1" }]);
     const dated = updateIssue(linked.data, "WEB-1", { dueDate: "2026-10-10" }, "2026-10-04T10:00:00.000Z", "ada");
     expect(dated.issues.find((issue) => issue.id === "WEB-1")?.dueDate).toBe("2026-10-10");
+  });
+
+  it("고른 이슈만 허용된 전이와 담당자로 바꾼다", () => {
+    const data = seedTracker();
+    const moved = bulkUpdateIssues(data, ["WEB-2", "WEB-3"], { status: "in_progress" }, "2026-10-05T09:00:00.000Z", "ada");
+    expect(moved.updatedIds).toEqual(["WEB-2"]);
+    expect(moved.skippedIds).toEqual(["WEB-3"]);
+    expect(moved.data.issues.find((issue) => issue.id === "WEB-2")?.status).toBe("in_progress");
+    expect(moved.data.issues.find((issue) => issue.id === "WEB-3")?.status).toBe("done");
+
+    const assigned = bulkUpdateIssues(data, ["WEB-2", "WEB-4"], { assigneeId: "ada" }, "2026-10-05T09:10:00.000Z", "ada");
+    expect(assigned.updatedIds).toEqual(["WEB-2", "WEB-4"]);
+    expect(assigned.data.issues.find((issue) => issue.id === "WEB-4")?.assigneeId).toBe("ada");
   });
 
   it("보드 빠른 필터는 담당자와 키를 함께 본다", () => {

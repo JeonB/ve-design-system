@@ -130,7 +130,53 @@ export function IssueList({ projectKey }: IssueListProps) {
           <option value="assignee">Assignee</option>
           <option value="priority">Priority</option>
         </Select>
-        {selected.length > 0 ? <span>{selected.length} selected</span> : null}
+        {selected.length > 0 ? (
+          <>
+            <span>{selected.length} selected</span>
+            <Select
+              aria-label="Set assignee"
+              name="bulk-assignee"
+              value=""
+              onChange={(event) => {
+                const assigneeId = event.target.value;
+                if (assigneeId.length === 0) {
+                  return;
+                }
+                if (data.bulkUpdate(selected, { assigneeId })) {
+                  setSelected([]);
+                }
+              }}
+            >
+              <option value="">Assignee</option>
+              {data.people.map((person) => (
+                <option key={person.id} value={person.id}>
+                  {person.name}
+                </option>
+              ))}
+            </Select>
+            <Select
+              aria-label="Set status"
+              name="bulk-status"
+              value=""
+              onChange={(event) => {
+                const nextStatus = event.target.value;
+                if (nextStatus.length === 0) {
+                  return;
+                }
+                if (data.bulkUpdate(selected, { status: nextStatus })) {
+                  setSelected([]);
+                }
+              }}
+            >
+              <option value="">Status</option>
+              {workflow.statuses.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </Select>
+          </>
+        ) : null}
       </div>
       {filtersOpen ? (
         <div className={filterPanel}>

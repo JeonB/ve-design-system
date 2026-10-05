@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useToast } from "@ve/ui";
 import { addAttachment, removeAttachment, type AttachmentInput } from "./attachments";
 import { deleteFilter, saveFilter, type SaveFilterInput } from "./filters";
-import { addComment, addLink, appendIssue, deleteIssue, issueById, removeLink, toggleWatch, updateIssue } from "./issues";
+import { addComment, addLink, appendIssue, bulkUpdateIssues, deleteIssue, issueById, removeLink, toggleWatch, updateIssue, type BulkIssuePatch } from "./issues";
 import { appendNotices, freshPresence, markAllNoticesRead, markNoticeRead, noticesForComment, noticesForUpdate, type Presence } from "./mail";
 import { ACTOR_STORAGE_KEY, can, setMembership } from "./permissions";
 import { assignSprint, completeSprint, createSprint, startSprint } from "./sprints";
@@ -21,6 +21,7 @@ type TrackerContextValue = TrackerData & {
   addWorkflowTransition: (projectKey: string, input: { from: string; to: string; name: string }) => boolean;
   removeWorkflowTransition: (projectKey: string, transitionId: string) => void;
   updateIssue: (issueId: string, patch: IssuePatch) => void;
+  bulkUpdate: (issueIds: string[], patch: BulkIssuePatch) => boolean;
   deleteIssue: (issueId: string) => void;
   addComment: (issueId: string, body: string) => boolean;
   createSprint: (projectKey: string, name: string) => boolean;
@@ -159,6 +160,48 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
         return;
       }
       toast({ title: "Saved", variant: "success" });
+    },
+    [allowed, commit, refuse, toast]
+  );
+
+  const bulkUpdate = useCallback(
+    (issueIds: string[], patch: BulkIssuePatch) => {
+      const sample = dataRef.current.issues.find((issue) => issueIds.includes(issue.id));
+      if (!sample) {
+        return false;
+      }
+      const wantsStatus = patch.status !== undefined;
+      const wantsAssignee = patch.assigneeId !== undefined;
+      if (wantsStatus && !allowed(sample.projectKey, "transition")) {
+        refuse();
+        return false;
+      }
+      if (wantsAssignee && !allowed(sample.projectKey, "edit")) {
+        refuse();
+        return false;
+      }
+      const now = new Date().toISOString();
+      const before = dataRef.current;
+      const result = bulkUpdateIssues(before, issueIds, patch, now, actorRef.current);
+      let next = result.data;
+      for (const issueId of result.updatedIds) {
+        const from = issueById(before, issueId);
+        const to = issueById(next, issueId);
+        if (from && to) {
+          next = appendNotices(next, noticesForUpdate(next, from, to, actorRef.current, now));
+        }
+      }
+      commit(next);
+      const skipped = result.skippedIds.length;
+      if (result.updatedIds.length === 0) {
+        toast({ title: "No selected work could be changed.", variant: "danger" });
+        return true;
+      }
+      toast({
+        title: skipped > 0 ? `${result.updatedIds.length} updated, ${skipped} skipped` : `${result.updatedIds.length} updated`,
+        variant: "success"
+      });
+      return true;
     },
     [allowed, commit, refuse, toast]
   );
@@ -467,6 +510,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       setActor: chooseActor,
       createIssue,
       updateIssue: update,
+      bulkUpdate,
       deleteIssue: remove,
       addComment: comment,
       createSprint: addSprint,
@@ -496,6 +540,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       addSprint,
       attach,
       beginSprint,
+      bulkUpdate,
       changeMembership,
       chooseActor,
       comment,

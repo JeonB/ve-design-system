@@ -10,6 +10,7 @@ import type {
   Project,
   TrackerData
 } from "./issue.types";
+import { canTransition, workflowFor } from "./workflow";
 
 export function projectByKey(data: TrackerData, projectKey: string): Project | undefined {
   return data.projects.find((project) => project.key === projectKey);
@@ -195,6 +196,49 @@ export function updateIssue(
       };
     })
   };
+}
+
+export type BulkIssuePatch = {
+  assigneeId?: string;
+  status?: string;
+};
+
+export function bulkUpdateIssues(
+  data: TrackerData,
+  issueIds: string[],
+  patch: BulkIssuePatch,
+  now: string,
+  actorId: string
+): { data: TrackerData; updatedIds: string[]; skippedIds: string[] } {
+  const updatedIds: string[] = [];
+  const skippedIds: string[] = [];
+  let next = data;
+
+  for (const issueId of issueIds) {
+    const issue = issueById(next, issueId);
+    if (!issue) {
+      skippedIds.push(issueId);
+      continue;
+    }
+    const change: IssuePatch = {};
+    if (patch.assigneeId !== undefined && patch.assigneeId !== issue.assigneeId) {
+      change.assigneeId = patch.assigneeId;
+    }
+    if (patch.status !== undefined && patch.status !== issue.status) {
+      const workflow = workflowFor(next, issue.projectKey);
+      if (canTransition(workflow, issue.status, patch.status)) {
+        change.status = patch.status;
+      }
+    }
+    if (change.assigneeId === undefined && change.status === undefined) {
+      skippedIds.push(issueId);
+      continue;
+    }
+    next = updateIssue(next, issueId, change, now, actorId);
+    updatedIds.push(issueId);
+  }
+
+  return { data: next, updatedIds, skippedIds };
 }
 
 export function deleteIssue(data: TrackerData, issueId: string): TrackerData {
