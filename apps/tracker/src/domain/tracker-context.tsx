@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useToast } from "@ve/ui";
 import { addAttachment, removeAttachment, type AttachmentInput } from "./attachments";
 import { deleteFilter, saveFilter, type SaveFilterInput } from "./filters";
-import { addComment, addLink, appendIssue, bulkUpdateIssues, deleteIssue, issueById, removeLink, toggleWatch, updateIssue, type BulkIssuePatch } from "./issues";
+import { addComment, addLink, appendIssue, bulkUpdateIssues, deleteIssue, issueById, placeIssue, removeLink, toggleWatch, updateIssue, type BulkIssuePatch } from "./issues";
 import { appendNotices, freshPresence, markAllNoticesRead, markNoticeRead, noticesForComment, noticesForUpdate, type Presence } from "./mail";
 import { ACTOR_STORAGE_KEY, can, setMembership } from "./permissions";
 import { assignSprint, completeSprint, createSprint, startSprint } from "./sprints";
@@ -22,6 +22,7 @@ type TrackerContextValue = TrackerData & {
   removeWorkflowTransition: (projectKey: string, transitionId: string) => void;
   updateIssue: (issueId: string, patch: IssuePatch) => void;
   bulkUpdate: (issueIds: string[], patch: BulkIssuePatch) => boolean;
+  placeIssue: (issueId: string, status: string, beforeIssueId: string | null) => void;
   deleteIssue: (issueId: string) => void;
   addComment: (issueId: string, body: string) => boolean;
   createSprint: (projectKey: string, name: string) => boolean;
@@ -202,6 +203,34 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
         variant: "success"
       });
       return true;
+    },
+    [allowed, commit, refuse, toast]
+  );
+
+  const place = useCallback(
+    (issueId: string, status: string, beforeIssueId: string | null) => {
+      const current = dataRef.current.issues.find((issue) => issue.id === issueId);
+      if (!current || beforeIssueId === issueId) {
+        return;
+      }
+      const statusChanged = current.status !== status;
+      if (statusChanged && !allowed(current.projectKey, "transition")) {
+        refuse();
+        return;
+      }
+      if (statusChanged && !canTransition(workflowFor(dataRef.current, current.projectKey), current.status, status)) {
+        toast({ title: "That transition is not allowed.", variant: "danger" });
+        return;
+      }
+      if (!statusChanged && !allowed(current.projectKey, "edit")) {
+        refuse();
+        return;
+      }
+      const now = new Date().toISOString();
+      const before = dataRef.current;
+      const next = placeIssue(before, issueId, status, beforeIssueId, now, actorRef.current);
+      const after = issueById(next, issueId);
+      commit(after && statusChanged ? appendNotices(next, noticesForUpdate(next, current, after, actorRef.current, now)) : next);
     },
     [allowed, commit, refuse, toast]
   );
@@ -511,6 +540,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       createIssue,
       updateIssue: update,
       bulkUpdate,
+      placeIssue: place,
       deleteIssue: remove,
       addComment: comment,
       createSprint: addSprint,
@@ -541,6 +571,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       attach,
       beginSprint,
       bulkUpdate,
+      place,
       changeMembership,
       chooseActor,
       comment,

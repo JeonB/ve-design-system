@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addLink, appendIssue, bulkUpdateIssues, filterIssues, issuesByProject, matchesQuickFilter, updateIssue } from "./issues";
+import { addLink, appendIssue, bulkUpdateIssues, filterIssues, issuesByProject, matchesQuickFilter, placeIssue, updateIssue } from "./issues";
 import { seedTracker } from "./seed";
 
 describe("issues", () => {
@@ -94,6 +94,18 @@ describe("issues", () => {
     const assigned = bulkUpdateIssues(data, ["WEB-2", "WEB-4"], { assigneeId: "ada" }, "2026-10-05T09:10:00.000Z", "ada");
     expect(assigned.updatedIds).toEqual(["WEB-2", "WEB-4"]);
     expect(assigned.data.issues.find((issue) => issue.id === "WEB-4")?.assigneeId).toBe("ada");
+  });
+
+  it("같은 상태 안에서 카드 순서를 앞에 둔다", () => {
+    const data = seedTracker();
+    const next = placeIssue(data, "WEB-4", "todo", "WEB-2", "2026-10-06T09:00:00.000Z", "ada");
+    const todo = next.issues
+      .filter((issue) => issue.projectKey === "WEB" && issue.status === "todo")
+      .sort((left, right) => left.rank - right.rank);
+    expect(todo.map((issue) => issue.id)).toEqual(["WEB-4", "WEB-2"]);
+
+    const moved = placeIssue(data, "WEB-2", "in_progress", null, "2026-10-06T09:10:00.000Z", "ada");
+    expect(moved.issues.find((issue) => issue.id === "WEB-2")?.status).toBe("in_progress");
   });
 
   it("보드 빠른 필터는 담당자와 키를 함께 본다", () => {

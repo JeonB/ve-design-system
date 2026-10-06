@@ -95,7 +95,10 @@ export function ProjectBoard({ projectKey }: ProjectBoardProps) {
           {groupBy === "none" ? null : <h2 className={laneTitle}>{group.label}</h2>}
           <div className={board}>
             {workflow.statuses.map((status) => {
-              const columnIssues = group.issues.filter((issue) => issue.status === status.id);
+              const columnIssues = group.issues
+                .filter((issue) => issue.status === status.id)
+                .slice()
+                .sort((left, right) => left.rank - right.rank || left.number - right.number);
               return (
                 <section
                   key={status.id}
@@ -116,7 +119,7 @@ export function ProjectBoard({ projectKey }: ProjectBoardProps) {
                     if (issueId.length === 0 || !mayTransition) {
                       return;
                     }
-                    data.updateIssue(issueId, { status: status.id });
+                    data.placeIssue(issueId, status.id, null);
                   }}
                 >
                   <header className={columnHead}>
@@ -133,7 +136,13 @@ export function ProjectBoard({ projectKey }: ProjectBoardProps) {
                     </button>
                   </header>
                   {columnIssues.map((issue) => (
-                    <IssueCard key={issue.id} data={data} draggable={mayTransition} issue={issue} />
+                    <IssueCard
+                      key={issue.id}
+                      data={data}
+                      draggable={mayTransition}
+                      issue={issue}
+                      onPlaceBefore={(draggedId) => data.placeIssue(draggedId, status.id, issue.id)}
+                    />
                   ))}
                 </section>
               );

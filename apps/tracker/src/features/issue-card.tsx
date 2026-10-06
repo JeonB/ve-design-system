@@ -16,9 +16,10 @@ type IssueCardProps = {
   issue: Issue;
   data: TrackerData;
   draggable?: boolean;
+  onPlaceBefore?: (draggedId: string) => void;
 };
 
-export function IssueCard({ issue, data, draggable = true }: IssueCardProps) {
+export function IssueCard({ issue, data, draggable = true, onPlaceBefore }: IssueCardProps) {
   const assignee = personById(data, issue.assigneeId);
 
   return (
@@ -29,6 +30,24 @@ export function IssueCard({ issue, data, draggable = true }: IssueCardProps) {
       onDragStart={(event) => {
         event.dataTransfer.setData("text/plain", issue.id);
         event.dataTransfer.effectAllowed = "move";
+      }}
+      onDragOver={(event) => {
+        if (!onPlaceBefore) {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+      }}
+      onDrop={(event) => {
+        if (!onPlaceBefore) {
+          return;
+        }
+        event.preventDefault();
+        event.stopPropagation();
+        const draggedId = event.dataTransfer.getData("text/plain");
+        if (draggedId.length > 0 && draggedId !== issue.id) {
+          onPlaceBefore(draggedId);
+        }
       }}
     >
       <span className={workCardTop}>

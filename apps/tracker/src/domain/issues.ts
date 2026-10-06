@@ -241,6 +241,55 @@ export function bulkUpdateIssues(
   return { data: next, updatedIds, skippedIds };
 }
 
+function rankBefore(siblings: Issue[], beforeIssueId: string | null): number {
+  const last = siblings[siblings.length - 1];
+  if (beforeIssueId === null || siblings.length === 0) {
+    return last ? last.rank + 1 : 1;
+  }
+  const index = siblings.findIndex((item) => item.id === beforeIssueId);
+  if (index < 0) {
+    return last ? last.rank + 1 : 1;
+  }
+  const nextRank = siblings[index].rank;
+  if (index === 0) {
+    return nextRank - 1;
+  }
+  return (siblings[index - 1].rank + nextRank) / 2;
+}
+
+export function placeIssue(
+  data: TrackerData,
+  issueId: string,
+  status: string,
+  beforeIssueId: string | null,
+  now: string,
+  actorId: string
+): TrackerData {
+  const issue = issueById(data, issueId);
+  if (!issue || beforeIssueId === issueId) {
+    return data;
+  }
+
+  let next = issue.status === status ? data : updateIssue(data, issueId, { status }, now, actorId);
+  const current = issueById(next, issueId);
+  if (!current) {
+    return next;
+  }
+
+  const siblings = next.issues
+    .filter((item) => item.projectKey === current.projectKey && item.status === status && item.id !== issueId)
+    .sort((left, right) => left.rank - right.rank || left.number - right.number);
+  const rank = rankBefore(siblings, beforeIssueId);
+  if (current.rank === rank && current.status === status) {
+    return next;
+  }
+
+  return {
+    ...next,
+    issues: next.issues.map((item) => (item.id === issueId ? { ...item, rank, updatedAt: now } : item))
+  };
+}
+
 export function deleteIssue(data: TrackerData, issueId: string): TrackerData {
   return {
     ...data,
