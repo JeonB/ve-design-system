@@ -44,7 +44,10 @@ export function formatActivity(entry: ActivityEntry, people: Person[]): string {
     case "created":
       return "created this issue";
     case "comment":
-      return "commented";
+      if (entry.from.length === 0) {
+        return "commented";
+      }
+      return entry.to.length === 0 ? "deleted a comment" : "edited a comment";
     case "attachment":
       return entry.to.length === 0 ? `removed ${entry.from}` : `attached ${entry.to}`;
     case "link":

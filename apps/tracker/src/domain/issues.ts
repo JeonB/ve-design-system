@@ -342,6 +342,128 @@ export function addComment(
   };
 }
 
+export function cloneIssue(
+  data: TrackerData,
+  issueId: string,
+  now: string,
+  actorId: string
+): { data: TrackerData; issue: Issue } | { error: string } {
+  const source = issueById(data, issueId);
+  if (!source) {
+    return { error: "Choose an existing issue." };
+  }
+  const created = appendIssue(
+    data,
+    source.projectKey,
+    {
+      type: source.type,
+      summary: `${source.summary} (copy)`,
+      description: source.description,
+      priority: source.priority,
+      status: source.status,
+      assigneeId: source.assigneeId,
+      labels: [...source.labels],
+      sprintId: source.sprintId,
+      parentId: source.parentId,
+      dueDate: source.dueDate
+    },
+    now,
+    actorId
+  );
+  const issue: Issue = {
+    ...created.issue,
+    storyPoints: source.storyPoints,
+    startDate: source.startDate
+  };
+  return {
+    data: {
+      ...created.data,
+      issues: created.data.issues.map((item) => (item.id === issue.id ? issue : item))
+    },
+    issue
+  };
+}
+
+export function updateComment(
+  data: TrackerData,
+  issueId: string,
+  commentId: string,
+  body: string,
+  actorId: string,
+  now: string
+): { data: TrackerData } | { error: string } {
+  const issue = issueById(data, issueId);
+  const comment = issue?.comments.find((item) => item.id === commentId);
+  if (!issue || !comment) {
+    return { error: "That comment is gone." };
+  }
+  if (comment.authorId !== actorId) {
+    return { error: "You can only edit your own comments." };
+  }
+  const trimmed = body.trim();
+  if (trimmed.length === 0) {
+    return { error: "Comment is empty." };
+  }
+  if (trimmed === comment.body) {
+    return { data };
+  }
+  return {
+    data: {
+      ...data,
+      issues: data.issues.map((item) => {
+        if (item.id !== issueId) {
+          return item;
+        }
+        return {
+          ...item,
+          updatedAt: now,
+          comments: item.comments.map((entry) => (entry.id === commentId ? { ...entry, body: trimmed } : entry)),
+          activity: [
+            ...item.activity,
+            nextActivity(item, { actorId, at: now, field: "comment", from: comment.body, to: trimmed })
+          ]
+        };
+      })
+    }
+  };
+}
+
+export function deleteComment(
+  data: TrackerData,
+  issueId: string,
+  commentId: string,
+  actorId: string,
+  now: string
+): { data: TrackerData } | { error: string } {
+  const issue = issueById(data, issueId);
+  const comment = issue?.comments.find((item) => item.id === commentId);
+  if (!issue || !comment) {
+    return { error: "That comment is gone." };
+  }
+  if (comment.authorId !== actorId) {
+    return { error: "You can only edit your own comments." };
+  }
+  return {
+    data: {
+      ...data,
+      issues: data.issues.map((item) => {
+        if (item.id !== issueId) {
+          return item;
+        }
+        return {
+          ...item,
+          updatedAt: now,
+          comments: item.comments.filter((entry) => entry.id !== commentId),
+          activity: [
+            ...item.activity,
+            nextActivity(item, { actorId, at: now, field: "comment", from: comment.body, to: "" })
+          ]
+        };
+      })
+    }
+  };
+}
+
 export function matchesQuickFilter(issue: Issue, query: string, onlyAssigneeId: string | null): boolean {
   if (onlyAssigneeId && issue.assigneeId !== onlyAssigneeId) {
     return false;

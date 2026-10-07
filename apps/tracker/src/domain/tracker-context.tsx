@@ -2,7 +2,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useToast } from "@ve/ui";
 import { addAttachment, removeAttachment, type AttachmentInput } from "./attachments";
 import { deleteFilter, saveFilter, type SaveFilterInput } from "./filters";
-import { addComment, addLink, appendIssue, bulkUpdateIssues, deleteIssue, issueById, placeIssue, removeLink, toggleWatch, updateIssue, type BulkIssuePatch } from "./issues";
+import { addComment, addLink, appendIssue, bulkUpdateIssues, cloneIssue, deleteComment, deleteIssue, issueById, placeIssue, removeLink, toggleWatch, updateComment, updateIssue, type BulkIssuePatch } from "./issues";
 import { appendNotices, freshPresence, markAllNoticesRead, markNoticeRead, noticesForComment, noticesForUpdate, type Presence } from "./mail";
 import { ACTOR_STORAGE_KEY, can, setMembership } from "./permissions";
 import { assignSprint, completeSprint, createSprint, startSprint } from "./sprints";
@@ -25,6 +25,9 @@ type TrackerContextValue = TrackerData & {
   placeIssue: (issueId: string, status: string, beforeIssueId: string | null) => void;
   deleteIssue: (issueId: string) => void;
   addComment: (issueId: string, body: string) => boolean;
+  updateComment: (issueId: string, commentId: string, body: string) => boolean;
+  deleteComment: (issueId: string, commentId: string) => boolean;
+  cloneIssue: (issueId: string) => Issue | null;
   createSprint: (projectKey: string, name: string) => boolean;
   startSprint: (sprintId: string) => boolean;
   completeSprint: (sprintId: string) => void;
@@ -264,6 +267,63 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       commit(after ? appendNotices(next, noticesForComment(next, after, body, actorRef.current, now)) : next);
       toast({ title: "Comment added", variant: "success" });
       return true;
+    },
+    [allowed, commit, refuse, toast]
+  );
+
+  const editComment = useCallback(
+    (issueId: string, commentId: string, body: string) => {
+      const current = dataRef.current.issues.find((issue) => issue.id === issueId);
+      if (!current || !allowed(current.projectKey, "comment")) {
+        refuse();
+        return false;
+      }
+      const result = updateComment(dataRef.current, issueId, commentId, body, actorRef.current, new Date().toISOString());
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      toast({ title: "Comment updated", variant: "success" });
+      return true;
+    },
+    [allowed, commit, refuse, toast]
+  );
+
+  const removeComment = useCallback(
+    (issueId: string, commentId: string) => {
+      const current = dataRef.current.issues.find((issue) => issue.id === issueId);
+      if (!current || !allowed(current.projectKey, "comment")) {
+        refuse();
+        return false;
+      }
+      const result = deleteComment(dataRef.current, issueId, commentId, actorRef.current, new Date().toISOString());
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return false;
+      }
+      commit(result.data);
+      toast({ title: "Comment removed", variant: "neutral" });
+      return true;
+    },
+    [allowed, commit, refuse, toast]
+  );
+
+  const copyIssue = useCallback(
+    (issueId: string) => {
+      const current = dataRef.current.issues.find((issue) => issue.id === issueId);
+      if (!current || !allowed(current.projectKey, "create")) {
+        refuse();
+        return null;
+      }
+      const result = cloneIssue(dataRef.current, issueId, new Date().toISOString(), actorRef.current);
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return null;
+      }
+      commit(result.data);
+      toast({ title: `${result.issue.key} created`, variant: "success" });
+      return result.issue;
     },
     [allowed, commit, refuse, toast]
   );
@@ -543,6 +603,9 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       placeIssue: place,
       deleteIssue: remove,
       addComment: comment,
+      updateComment: editComment,
+      deleteComment: removeComment,
+      cloneIssue: copyIssue,
       createSprint: addSprint,
       startSprint: beginSprint,
       completeSprint: finishSprint,
@@ -575,6 +638,9 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       changeMembership,
       chooseActor,
       comment,
+      copyIssue,
+      editComment,
+      removeComment,
       createIssue,
       createStatus,
       createTransition,

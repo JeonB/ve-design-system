@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addLink, appendIssue, bulkUpdateIssues, filterIssues, issuesByProject, matchesQuickFilter, placeIssue, updateIssue } from "./issues";
+import { addLink, appendIssue, bulkUpdateIssues, cloneIssue, deleteComment, filterIssues, issuesByProject, matchesQuickFilter, placeIssue, updateComment, updateIssue } from "./issues";
 import { seedTracker } from "./seed";
 
 describe("issues", () => {
@@ -106,6 +106,37 @@ describe("issues", () => {
 
     const moved = placeIssue(data, "WEB-2", "in_progress", null, "2026-10-06T09:10:00.000Z", "ada");
     expect(moved.issues.find((issue) => issue.id === "WEB-2")?.status).toBe("in_progress");
+  });
+
+  it("이슈를 복제하면 댓글 없이 같은 상태의 다음 키를 만든다", () => {
+    const data = seedTracker();
+    const cloned = cloneIssue(data, "WEB-1", "2026-10-07T09:00:00.000Z", "ada");
+    if ("error" in cloned) {
+      throw new Error(cloned.error);
+    }
+    expect(cloned.issue.key).toBe("WEB-6");
+    expect(cloned.issue.summary).toBe("Publish the pricing page (copy)");
+    expect(cloned.issue.status).toBe("in_progress");
+    expect(cloned.issue.labels).toEqual(["pricing"]);
+    expect(cloned.issue.storyPoints).toBe(5);
+    expect(cloned.issue.comments).toEqual([]);
+    expect(cloned.issue.links).toEqual([]);
+  });
+
+  it("작성자만 댓글을 고치거나 지운다", () => {
+    const data = seedTracker();
+    const denied = updateComment(data, "WEB-1", "WEB-1-c1", "Shorter", "ada", "2026-10-07T09:10:00.000Z");
+    expect(denied).toEqual({ error: "You can only edit your own comments." });
+    const edited = updateComment(data, "WEB-1", "WEB-1-c1", "Shorter", "grace", "2026-10-07T09:10:00.000Z");
+    if ("error" in edited) {
+      throw new Error(edited.error);
+    }
+    expect(edited.data.issues.find((issue) => issue.id === "WEB-1")?.comments[0]?.body).toBe("Shorter");
+    const removed = deleteComment(edited.data, "WEB-1", "WEB-1-c1", "grace", "2026-10-07T09:20:00.000Z");
+    if ("error" in removed) {
+      throw new Error(removed.error);
+    }
+    expect(removed.data.issues.find((issue) => issue.id === "WEB-1")?.comments).toEqual([]);
   });
 
   it("보드 빠른 필터는 담당자와 키를 함께 본다", () => {

@@ -67,6 +67,8 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
   const [fieldsOpen, setFieldsOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [activityTab, setActivityTab] = useState<ActivityTab>("all");
+  const [editingCommentId, setEditingCommentId] = useState<string | null>(null);
+  const [editingComment, setEditingComment] = useState("");
   const [linkType, setLinkType] = useState<LinkType>("relates");
   const [linkTarget, setLinkTarget] = useState("");
 
@@ -492,13 +494,55 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
               {activityTab !== "history"
                 ? currentIssue.comments.map((item) => {
                     const author = personById(data, item.authorId);
+                    const mine = item.authorId === data.actorId;
                     return (
                       <Stack key={item.id} gap="sm">
                         <Stack direction="horizontal" gap="sm" align="center">
                           <Avatar alt={author?.name ?? "Unknown"} size="sm" />
                           <span>{author?.name ?? "Unknown"}</span>
+                          {mine && mayComment ? (
+                            <>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setEditingCommentId(item.id);
+                                  setEditingComment(item.body);
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button type="button" size="sm" variant="ghost" onClick={() => data.deleteComment(currentIssue.id, item.id)}>
+                                Delete
+                              </Button>
+                            </>
+                          ) : null}
                         </Stack>
-                        <p>{item.body}</p>
+                        {editingCommentId === item.id ? (
+                          <Field>
+                            <Field.Label>Edit comment</Field.Label>
+                            <Textarea
+                              name={`edit-comment-${item.id}`}
+                              value={editingComment}
+                              onChange={(event) => setEditingComment(event.target.value)}
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => {
+                                if (data.updateComment(currentIssue.id, item.id, editingComment)) {
+                                  setEditingCommentId(null);
+                                  setEditingComment("");
+                                }
+                              }}
+                            >
+                              Save comment
+                            </Button>
+                          </Field>
+                        ) : (
+                          <p>{item.body}</p>
+                        )}
                       </Stack>
                     );
                   })
@@ -528,6 +572,19 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
               </Button>
             </Stack>
             <Stack direction="horizontal" gap="sm">
+              <Button
+                disabled={!mayCreate}
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  const copy = data.cloneIssue(currentIssue.id);
+                  if (copy) {
+                    navigate(`/p/${copy.projectKey}/issues/${copy.id}`);
+                  }
+                }}
+              >
+                Clone
+              </Button>
               <Button disabled={!mayDelete} type="button" variant="dangerOutline" onClick={() => setDeleteOpen(true)}>
                 Delete
               </Button>
