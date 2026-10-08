@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { evaluateJql } from "./jql";
 import { seedTracker } from "./seed";
 
-function keys(source: string, actorId = "ada") {
-  const result = evaluateJql(seedTracker(), source, actorId);
+function keys(source: string, actorId = "ada", now = "2026-10-11T03:00:00.000Z") {
+  const result = evaluateJql(seedTracker(), source, actorId, now);
   if ("error" in result) {
     throw new Error(result.error);
   }
@@ -26,6 +26,16 @@ describe("jql", () => {
     expect(keys("key = WEB-2 OR key = WEB-5 ORDER BY key ASC")).toEqual(["WEB-2", "WEB-5"]);
     expect(keys("project = WEB AND NOT status = done").sort()).toEqual(["WEB-1", "WEB-2", "WEB-4", "WEB-5"]);
     expect(keys("status IN (done, todo) AND project = API ORDER BY key DESC")).toEqual(["API-2"]);
+  });
+
+  it("기한, 관찰자, 해결 상태와 오늘 기준으로 거른다", () => {
+    expect(keys('due <= "2026-10-10" AND project = WEB')).toEqual(["WEB-1"]);
+    expect(keys("due < startOfDay() AND project = WEB")).toEqual(["WEB-1"]);
+    expect(keys("due IS EMPTY AND project = WEB").sort()).toEqual(["WEB-2", "WEB-3", "WEB-4", "WEB-5"]);
+    expect(keys("watcher = currentUser() AND project = WEB").sort()).toEqual(["WEB-1", "WEB-5"]);
+    expect(keys("resolution = Unresolved AND project = WEB").sort()).toEqual(["WEB-1", "WEB-2", "WEB-4", "WEB-5"]);
+    expect(keys("resolution = Done AND project = WEB")).toEqual(["WEB-3"]);
+    expect(keys("project = WEB ORDER BY due ASC")[0]).toBe("WEB-1");
   });
 
   it("잘못된 문법은 이유로 돌려준다", () => {

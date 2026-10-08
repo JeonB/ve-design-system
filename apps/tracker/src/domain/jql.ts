@@ -1,10 +1,13 @@
 import type { Issue, TrackerData } from "./issue.types";
 import { ISSUE_STATUSES, isIssueStatus, isIssueType, isPriority, PRIORITIES } from "./issue.types";
 import { priorityLabel, statusLabel, typeLabel } from "./labels";
+import { isDoneStatus } from "./workflow";
 
 type CmpOp = "=" | "!=" | "~" | "!~" | ">" | ">=" | "<" | "<=";
 
-type Value = string | number | { fn: "currentUser" };
+type JqlFn = "currentUser" | "startOfDay" | "now";
+
+type Value = string | number | { fn: JqlFn };
 
 type Expr =
   | { kind: "cmp"; field: string; op: CmpOp; value: Value }
@@ -39,10 +42,14 @@ const FIELDS = new Set([
   "labels",
   "sprint",
   "storypoints",
-  "parent"
+  "parent",
+  "due",
+  "start",
+  "watcher",
+  "resolution"
 ]);
 
-const ORDER_FIELDS = new Set(["updated", "created", "key", "summary", "priority", "status", "storypoints", "rank"]);
+const ORDER_FIELDS = new Set(["updated", "created", "key", "summary", "priority", "status", "storypoints", "rank", "due"]);
 
 const OPS: Array<{ raw: string; op: CmpOp }> = [
   { raw: "!=", op: "!=" },
@@ -223,11 +230,12 @@ class Parser {
       this.index += 1;
       return token.v;
     }
-    if (token.t === "id" && token.v.toLowerCase() === "currentuser") {
+    if (token.t === "id" && isJqlFn(token.v)) {
+      const fn = jqlFn(token.v);
       this.index += 1;
-      this.expectToken("lp", "Expected ( after currentUser.");
-      this.expectToken("rp", "Expected ) after currentUser.");
-      return { fn: "currentUser" };
+      this.expectToken("lp", `Expected ( after ${fn}.`);
+      this.expectToken("rp", `Expected ) after ${fn}.`);
+      return { fn };
     }
     if (token.t === "id") {
       this.index += 1;
@@ -326,8 +334,38 @@ class Parser {
   }
 }
 
-function resolve(value: Value, actorId: string): string | number {
-  return typeof value === "object" ? actorId : value;
+function isJqlFn(value: string): boolean {
+  const name = value.toLowerCase();
+  return name === "currentuser" || name === "startofday" || name === "now";
+}
+
+function jqlFn(value: string): JqlFn {
+  const name = value.toLowerCase();
+  if (name === "startofday") {
+    return "startOfDay";
+  }
+  if (name === "now") {
+    return "now";
+  }
+  return "currentUser";
+}
+
+function resolve(value: Value, actorId: string, now: string): string | number {
+  if (typeof value !== "object") {
+    return value;
+  }
+  switch (value.fn) {
+    case "currentUser":
+      return actorId;
+    case "startOfDay":
+      return now.slice(0, 10);
+    case "now":
+      return now;
+    default: {
+      const exhaustive: never = value.fn;
+      return exhaustive;
+    }
+  }
 }
 
 function same(left: string, right: string): boolean {
@@ -380,6 +418,14 @@ function texts(issue: Issue, field: string, data: TrackerData): string[] {
       const parent = data.issues.find((item) => item.id === issue.parentId);
       return parent ? [parent.id, parent.key] : [issue.parentId];
     }
+    case "due":
+      return issue.dueDate === null ? [] : [issue.dueDate];
+    case "start":
+      return issue.startDate === null ? [] : [issue.startDate];
+    case "watcher":
+      return issue.watchers.flatMap((personId) => names(personId));
+    case "resolution":
+      return isDoneStatus(data, issue) ? ["done", "Done"] : ["unresolved", "Unresolved"];
     case "storypoints":
       return [];
     default:
@@ -390,6 +436,15 @@ function texts(issue: Issue, field: string, data: TrackerData): string[] {
 function isEmpty(issue: Issue, field: string, data: TrackerData): boolean {
   if (field === "storypoints") {
     return issue.storyPoints === null;
+  }
+  if (field === "due") {
+    return issue.dueDate === null;
+  }
+  if (field === "start") {
+    return issue.startDate === null;
+  }
+  if (field === "resolution") {
+    return false;
   }
   return texts(issue, field, data).length === 0;
 }
@@ -431,10 +486,37 @@ function comparePoints(points: number | null, op: CmpOp, raw: string | number): 
   }
 }
 
-function compare(issue: Issue, expr: Extract<Expr, { kind: "cmp" }>, data: TrackerData, actorId: string): boolean {
-  const raw = resolve(expr.value, actorId);
+function compareDate(actual: string | null, op: CmpOp, raw: string): boolean {
+  if (actual === null || op === "~" || op === "!~") {
+    return false;
+  }
+  switch (op) {
+    case "=":
+      return actual === raw;
+    case "!=":
+      return actual !== raw;
+    case ">":
+      return actual > raw;
+    case ">=":
+      return actual >= raw;
+    case "<":
+      return actual < raw;
+    case "<=":
+      return actual <= raw;
+    default: {
+      const exhaustive: never = op;
+      return exhaustive;
+    }
+  }
+}
+
+function compare(issue: Issue, expr: Extract<Expr, { kind: "cmp" }>, data: TrackerData, actorId: string, now: string): boolean {
+  const raw = resolve(expr.value, actorId, now);
   if (expr.field === "storypoints") {
     return comparePoints(issue.storyPoints, expr.op, raw);
+  }
+  if (expr.field === "due" || expr.field === "start") {
+    return compareDate(expr.field === "due" ? issue.dueDate : issue.startDate, expr.op, String(raw));
   }
   const text = String(raw);
   switch (expr.op) {
@@ -458,8 +540,8 @@ function compare(issue: Issue, expr: Extract<Expr, { kind: "cmp" }>, data: Track
   }
 }
 
-function inList(issue: Issue, expr: Extract<Expr, { kind: "in" }>, data: TrackerData, actorId: string): boolean {
-  const values = expr.values.map((value) => resolve(value, actorId));
+function inList(issue: Issue, expr: Extract<Expr, { kind: "in" }>, data: TrackerData, actorId: string, now: string): boolean {
+  const values = expr.values.map((value) => resolve(value, actorId, now));
   const hit =
     expr.field === "storypoints"
       ? issue.storyPoints !== null && values.some((value) => issue.storyPoints === Number(value))
@@ -467,20 +549,20 @@ function inList(issue: Issue, expr: Extract<Expr, { kind: "in" }>, data: Tracker
   return expr.negate ? !hit : hit;
 }
 
-function matches(issue: Issue, expr: Expr, data: TrackerData, actorId: string): boolean {
+function matches(issue: Issue, expr: Expr, data: TrackerData, actorId: string, now: string): boolean {
   switch (expr.kind) {
     case "and":
-      return matches(issue, expr.left, data, actorId) && matches(issue, expr.right, data, actorId);
+      return matches(issue, expr.left, data, actorId, now) && matches(issue, expr.right, data, actorId, now);
     case "or":
-      return matches(issue, expr.left, data, actorId) || matches(issue, expr.right, data, actorId);
+      return matches(issue, expr.left, data, actorId, now) || matches(issue, expr.right, data, actorId, now);
     case "not":
-      return !matches(issue, expr.expr, data, actorId);
+      return !matches(issue, expr.expr, data, actorId, now);
     case "empty":
       return isEmpty(issue, expr.field, data) !== expr.negate;
     case "cmp":
-      return compare(issue, expr, data, actorId);
+      return compare(issue, expr, data, actorId, now);
     case "in":
-      return inList(issue, expr, data, actorId);
+      return inList(issue, expr, data, actorId, now);
     default: {
       const exhaustive: never = expr;
       return exhaustive;
@@ -506,6 +588,8 @@ function orderValue(issue: Issue, field: string): string | number {
       return issue.storyPoints ?? Number.POSITIVE_INFINITY;
     case "rank":
       return issue.rank;
+    case "due":
+      return issue.dueDate ?? "9999-99-99";
     default:
       return issue.key;
   }
@@ -528,11 +612,12 @@ function compareOrder(left: Issue, right: Issue, order: Order[]): number {
 export function evaluateJql(
   data: TrackerData,
   source: string,
-  actorId: string
+  actorId: string,
+  now = new Date().toISOString()
 ): { issues: Issue[] } | { error: string } {
   try {
     const parsed = new Parser(tokenize(source.trim())).parse();
-    const issues = data.issues.filter((issue) => (parsed.where ? matches(issue, parsed.where, data, actorId) : true));
+    const issues = data.issues.filter((issue) => (parsed.where ? matches(issue, parsed.where, data, actorId, now) : true));
     issues.sort((left, right) => compareOrder(left, right, parsed.order));
     return { issues };
   } catch (error) {
