@@ -2,6 +2,7 @@ import { useEffect, useState, type ChangeEvent } from "react";
 import { Alert, Avatar, Button, Dialog, Drawer, Field, Input, Select, Separator, Stack, Textarea } from "@ve/ui";
 import { Link, useNavigate } from "react-router";
 import { formatActivity } from "../domain/activity-text";
+import { canRemoveAttachment, formatAttachmentSize } from "../domain/attachments";
 import { childIssues, issueById, issuesByProject, personById } from "../domain/issues";
 import { ISSUE_TYPES, LINK_TYPES, PRIORITIES, isIssueType, isLinkType, isPriority, validateSummary, type LinkType } from "../domain/issue.types";
 import { priorityLabel, typeLabel } from "../domain/labels";
@@ -10,6 +11,7 @@ import { useTracker } from "../domain/tracker-context";
 import { transitionTargets, workflowFor } from "../domain/workflow";
 import {
   activityTabs,
+  attachmentPreview,
   chipRow,
   detail,
   dropZone,
@@ -365,14 +367,23 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
             <Stack gap="sm">
               <h2 className={sectionLabel}>Attachments</h2>
               {currentIssue.attachments.map((file) => (
-                <Stack key={file.id} direction="horizontal" gap="sm" align="center">
-                  <a download={file.name} href={file.dataUrl}>
-                    {file.name}
-                  </a>
-                  <span>{file.size} B</span>
-                  <Button disabled={!mayAttach} type="button" size="sm" variant="ghost" onClick={() => data.removeAttachment(currentIssue.id, file.id)}>
-                    Remove
-                  </Button>
+                <Stack key={file.id} gap="sm">
+                  {file.mediaType.startsWith("image/") ? <img alt={file.name} className={attachmentPreview} src={file.dataUrl} /> : null}
+                  <Stack direction="horizontal" gap="sm" align="center">
+                    <a download={file.name} href={file.dataUrl}>
+                      {file.name}
+                    </a>
+                    <span>{formatAttachmentSize(file.size)}</span>
+                    <Button
+                      disabled={!canRemoveAttachment(data, currentIssue.id, file.id, data.actorId)}
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => data.removeAttachment(currentIssue.id, file.id)}
+                    >
+                      Remove
+                    </Button>
+                  </Stack>
                 </Stack>
               ))}
               <div className={dropZone}>

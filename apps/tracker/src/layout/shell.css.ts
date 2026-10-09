@@ -535,6 +535,14 @@ export const narrowOnly = style({
   }
 });
 
+export const attachmentPreview = style({
+  maxWidth: "160px",
+  maxHeight: "96px",
+  objectFit: "contain",
+  borderRadius: vars.radius.sm,
+  border: `1px solid ${vars.color.border}`
+});
+
 export const dropZone = style({
   border: `1px dashed ${vars.color.border}`,
   borderRadius: vars.radius.md,

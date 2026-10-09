@@ -439,7 +439,12 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
         refuse();
         return;
       }
-      commit(removeAttachment(dataRef.current, issueId, attachmentId, new Date().toISOString(), actorRef.current));
+      const result = removeAttachment(dataRef.current, issueId, attachmentId, new Date().toISOString(), actorRef.current);
+      if ("error" in result) {
+        toast({ title: result.error, variant: "danger" });
+        return;
+      }
+      commit(result.data);
       toast({ title: "Attachment removed", variant: "neutral" });
     },
     [allowed, commit, refuse, toast]
