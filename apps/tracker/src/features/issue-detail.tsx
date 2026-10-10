@@ -112,18 +112,22 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
     }
     const pointsText = currentFields.storyPoints.trim();
     const points = Number(pointsText);
-    data.updateIssue(currentIssue.id, {
-      summary,
-      description,
-      type: currentFields.type,
-      priority: currentFields.priority,
-      assigneeId: currentFields.assigneeId,
-      labels: currentFields.labels
-        .split(",")
-        .map((label) => label.trim())
-        .filter((label) => label.length > 0),
-      storyPoints: pointsText.length === 0 || !Number.isFinite(points) ? null : points
-    });
+    data.updateIssue(
+      currentIssue.id,
+      {
+        summary,
+        description,
+        type: currentFields.type,
+        priority: currentFields.priority,
+        assigneeId: currentFields.assigneeId,
+        labels: currentFields.labels
+          .split(",")
+          .map((label) => label.trim())
+          .filter((label) => label.length > 0),
+        storyPoints: pointsText.length === 0 || !Number.isFinite(points) ? null : points
+      },
+      currentIssue.updatedAt
+    );
   };
 
   const onFile = (event: ChangeEvent<HTMLInputElement>) => {
@@ -204,7 +208,9 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
           disabled={!mayEdit}
           name="parent"
           value={currentIssue.parentId ?? ""}
-          onChange={(event) => data.updateIssue(currentIssue.id, { parentId: event.target.value.length === 0 ? null : event.target.value })}
+          onChange={(event) =>
+            data.updateIssue(currentIssue.id, { parentId: event.target.value.length === 0 ? null : event.target.value }, currentIssue.updatedAt)
+          }
         >
           <option value="">None</option>
           {siblings.map((item) => (
@@ -221,7 +227,9 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
           name="due-date"
           type="date"
           value={currentIssue.dueDate ?? ""}
-          onChange={(event) => data.updateIssue(currentIssue.id, { dueDate: event.target.value.length === 0 ? null : event.target.value })}
+          onChange={(event) =>
+            data.updateIssue(currentIssue.id, { dueDate: event.target.value.length === 0 ? null : event.target.value }, currentIssue.updatedAt)
+          }
         />
       </Field>
       <Field>
@@ -231,7 +239,9 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
           name="start-date"
           type="date"
           value={currentIssue.startDate ?? ""}
-          onChange={(event) => data.updateIssue(currentIssue.id, { startDate: event.target.value.length === 0 ? null : event.target.value })}
+          onChange={(event) =>
+            data.updateIssue(currentIssue.id, { startDate: event.target.value.length === 0 ? null : event.target.value }, currentIssue.updatedAt)
+          }
         />
       </Field>
       <Field>
@@ -326,7 +336,7 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
               disabled={!mayTransition}
               name="status"
               value={currentIssue.status}
-              onChange={(event) => data.updateIssue(currentIssue.id, { status: event.target.value })}
+              onChange={(event) => data.updateIssue(currentIssue.id, { status: event.target.value }, currentIssue.updatedAt)}
             >
               {statusOptions.map((status) => (
                 <option key={status.id} value={status.id}>

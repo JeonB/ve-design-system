@@ -2,11 +2,11 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { useToast } from "@ve/ui";
 import { addAttachment, removeAttachment, type AttachmentInput } from "./attachments";
 import { deleteFilter, saveFilter, type SaveFilterInput } from "./filters";
-import { addComment, addLink, appendIssue, bulkUpdateIssues, cloneIssue, deleteComment, deleteIssue, issueById, placeIssue, removeLink, toggleWatch, updateComment, updateIssue, type BulkIssuePatch } from "./issues";
-import { appendNotices, freshPresence, markAllNoticesRead, markNoticeRead, noticesForComment, noticesForUpdate, type Presence } from "./mail";
+import { addComment, addLink, appendIssue, bulkUpdateIssues, cloneIssue, deleteComment, deleteIssue, issueById, placeIssue, removeLink, staleIssueMessage, toggleWatch, updateComment, updateIssue, type BulkIssuePatch } from "./issues";
+import { appendNotices, freshPresence, markAllNoticesRead, markNoticeRead, noticesForComment, noticesForUpdate, setMailMute, type Presence } from "./mail";
 import { ACTOR_STORAGE_KEY, can, setMembership } from "./permissions";
 import { assignSprint, completeSprint, createSprint, startSprint } from "./sprints";
-import type { CreateIssueInput, Issue, IssuePatch, LinkType, ProjectAction, ProjectRole, TrackerData } from "./issue.types";
+import type { CreateIssueInput, Issue, IssuePatch, LinkType, NotificationKind, ProjectAction, ProjectRole, TrackerData } from "./issue.types";
 import { CURRENT_ACTOR_ID } from "./seed";
 import { TRACKER_STORAGE_KEY, loadTracker, saveTracker } from "./storage";
 import { actorMayTransition, addWorkflowStatus, addWorkflowTransition, removeWorkflowStatus, removeWorkflowTransition, statusName, type StatusCategory, type TransitionGuard } from "./workflow";
@@ -20,7 +20,7 @@ type TrackerContextValue = TrackerData & {
   removeWorkflowStatus: (projectKey: string, statusId: string) => boolean;
   addWorkflowTransition: (projectKey: string, input: { from: string; to: string; name: string; guard?: TransitionGuard }) => boolean;
   removeWorkflowTransition: (projectKey: string, transitionId: string) => void;
-  updateIssue: (issueId: string, patch: IssuePatch) => void;
+  updateIssue: (issueId: string, patch: IssuePatch, expectedUpdatedAt?: string) => void;
   bulkUpdate: (issueIds: string[], patch: BulkIssuePatch) => boolean;
   placeIssue: (issueId: string, status: string, beforeIssueId: string | null) => void;
   deleteIssue: (issueId: string) => void;
@@ -43,6 +43,7 @@ type TrackerContextValue = TrackerData & {
   announce: (issueId: string) => void;
   markNoticeRead: (noticeId: string) => void;
   markAllNoticesRead: () => void;
+  setMailMute: (kind: NotificationKind, muted: boolean) => void;
 };
 
 const TRACKER_CHANNEL = "ve-tracker";
@@ -136,10 +137,17 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
   );
 
   const update = useCallback(
-    (issueId: string, patch: IssuePatch) => {
+    (issueId: string, patch: IssuePatch, expectedUpdatedAt?: string) => {
       const current = dataRef.current.issues.find((issue) => issue.id === issueId);
       if (!current) {
         return;
+      }
+      if (expectedUpdatedAt !== undefined) {
+        const stale = staleIssueMessage(current.updatedAt, expectedUpdatedAt);
+        if (stale) {
+          toast({ title: stale, variant: "danger" });
+          return;
+        }
       }
       const statusChanged = patch.status !== undefined && patch.status !== current.status;
       const edits = Object.keys(patch).some((key) => key !== "status");
@@ -597,6 +605,13 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
     commit(markAllNoticesRead(dataRef.current, actorRef.current));
   }, [commit]);
 
+  const muteMail = useCallback(
+    (kind: NotificationKind, muted: boolean) => {
+      commit(setMailMute(dataRef.current, actorRef.current, kind, muted));
+    },
+    [commit]
+  );
+
   const value = useMemo(
     () => ({
       ...data,
@@ -630,7 +645,8 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       presence,
       announce,
       markNoticeRead: readNotice,
-      markAllNoticesRead: readAllNotices
+      markAllNoticesRead: readAllNotices,
+      setMailMute: muteMail
     }),
     [
       actorId,
@@ -661,6 +677,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
       presence,
       readAllNotices,
       readNotice,
+      muteMail,
       remove,
       removeFilter,
       storeFilter,

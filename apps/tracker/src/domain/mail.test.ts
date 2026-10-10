@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { issueById, updateIssue } from "./issues";
-import { freshPresence, markNoticeRead, noticesForComment, noticesForUpdate } from "./mail";
+import { freshPresence, isMailMuted, markNoticeRead, noticesForComment, noticesForUpdate, setMailMute } from "./mail";
 import { seedTracker } from "./seed";
 import { parseTracker, serializeTracker } from "./storage";
 
@@ -53,5 +53,25 @@ describe("mail", () => {
     const raw = JSON.parse(serializeTracker(seedTracker())) as { data: { notices?: unknown } };
     delete raw.data.notices;
     expect(parseTracker(JSON.stringify(raw))?.notices).toEqual([]);
+  });
+
+  it("관찰자에게도 댓글을 알리고, 끈 종류는 보내지 않는다", () => {
+    const data = seedTracker();
+    const issue = issueById(data, "WEB-5");
+    if (!issue) {
+      throw new Error("missing issue");
+    }
+    const watching = { ...issue, watchers: ["ada", "grace"] };
+    const sent = noticesForComment(data, watching, "shipped", "ada", "2026-10-11T02:00:00.000Z");
+    expect(sent.map((item) => [item.recipientId, item.kind]).sort()).toEqual([
+      ["grace", "comment"],
+      ["min", "comment"]
+    ]);
+    const muted = setMailMute(data, "grace", "comment", true);
+    expect(isMailMuted(muted, "grace", "comment")).toBe(true);
+    expect(noticesForComment(muted, watching, "shipped", "ada", "2026-10-11T02:00:00.000Z").map((item) => item.recipientId)).toEqual(["min"]);
+    const raw = JSON.parse(serializeTracker(muted)) as { data: { mailMutes?: unknown } };
+    delete raw.data.mailMutes;
+    expect(parseTracker(JSON.stringify(raw))?.mailMutes).toEqual([]);
   });
 });

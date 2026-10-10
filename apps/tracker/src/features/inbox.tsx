@@ -1,5 +1,6 @@
 import { Badge, Button, Card, Stack } from "@ve/ui";
 import { Link } from "react-router";
+import { NOTIFICATION_KINDS } from "../domain/issue.types";
 import { useTracker } from "../domain/tracker-context";
 import { padded } from "../layout/shell.css";
 
@@ -15,6 +16,16 @@ export function Inbox() {
         <Button type="button" variant="outline" onClick={() => data.markAllNoticesRead()}>
           Mark all read
         </Button>
+      </Stack>
+      <Stack direction="horizontal" gap="md">
+        {NOTIFICATION_KINDS.map((kind) => {
+          const muted = data.mailMutes.some((item) => item.personId === data.actorId && item.kind === kind);
+          return (
+            <label key={kind}>
+              <input checked={muted} name={`mute-${kind}`} type="checkbox" onChange={(event) => data.setMailMute(kind, event.target.checked)} /> Mute {kind}
+            </label>
+          );
+        })}
       </Stack>
       {notices.length === 0 ? <p>No messages.</p> : null}
       {notices.map((notice) => (

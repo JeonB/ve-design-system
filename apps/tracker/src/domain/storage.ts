@@ -10,6 +10,7 @@ import {
   type Comment,
   type Issue,
   type IssueLink,
+  type MailMute,
   type MailNotice,
   type Membership,
   type Person,
@@ -396,6 +397,13 @@ function readNotice(value: unknown): MailNotice | null {
   };
 }
 
+function readMailMute(value: unknown): MailMute | null {
+  if (!isRecord(value) || !isString(value.personId) || !isString(value.kind) || !isNotificationKind(value.kind)) {
+    return null;
+  }
+  return { personId: value.personId, kind: value.kind };
+}
+
 function readPerson(value: unknown): Person | null {
   if (!isRecord(value) || !isString(value.id) || !isString(value.name)) {
     return null;
@@ -542,7 +550,21 @@ export function parseTracker(raw: string): TrackerData | null {
     }
   }
 
-  return { projects, people, sprints, issues, savedFilters, memberships, workflows, notices };
+  const mailMutes: MailMute[] = [];
+  if (data.mailMutes !== undefined) {
+    if (!Array.isArray(data.mailMutes)) {
+      return null;
+    }
+    for (const item of data.mailMutes) {
+      const mute = readMailMute(item);
+      if (!mute) {
+        return null;
+      }
+      mailMutes.push(mute);
+    }
+  }
+
+  return { projects, people, sprints, issues, savedFilters, memberships, workflows, notices, mailMutes };
 }
 
 export function serializeTracker(data: TrackerData): string {

@@ -194,6 +194,7 @@ export function seedTracker(): TrackerData {
     savedFilters: [],
     memberships: defaultMemberships(drafted.projects, drafted.people),
     workflows: drafted.projects.map((project) => defaultWorkflow(project.key)),
-    notices: []
+    notices: [],
+    mailMutes: []
   };
 }

@@ -287,6 +287,10 @@ export function placeIssue(
   };
 }
 
+export function staleIssueMessage(updatedAt: string, expectedUpdatedAt: string): string | null {
+  return updatedAt === expectedUpdatedAt ? null : "This issue changed in another tab.";
+}
+
 export function deleteIssue(data: TrackerData, issueId: string): TrackerData {
   return {
     ...data,

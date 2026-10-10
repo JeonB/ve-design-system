@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { addLink, appendIssue, bulkUpdateIssues, cloneIssue, deleteComment, filterIssues, issuesByProject, matchesQuickFilter, placeIssue, updateComment, updateIssue } from "./issues";
+import { addLink, appendIssue, bulkUpdateIssues, cloneIssue, deleteComment, filterIssues, issuesByProject, matchesQuickFilter, placeIssue, staleIssueMessage, updateComment, updateIssue } from "./issues";
 import { seedTracker } from "./seed";
 
 describe("issues", () => {
@@ -143,5 +143,14 @@ describe("issues", () => {
     const web = issuesByProject(seedTracker(), "WEB");
     const mine = web.filter((issue) => matchesQuickFilter(issue, "web-2", "min"));
     expect(mine.map((issue) => issue.key)).toEqual(["WEB-2"]);
+  });
+
+  it("다른 탭이 먼저 저장하면 그 시각과 어긋난다", () => {
+    const issue = seedTracker().issues.find((item) => item.id === "WEB-1");
+    if (!issue) {
+      throw new Error("missing issue");
+    }
+    expect(staleIssueMessage(issue.updatedAt, issue.updatedAt)).toBeNull();
+    expect(staleIssueMessage(issue.updatedAt, "2026-10-01T00:00:00.000Z")).toBe("This issue changed in another tab.");
   });
 });

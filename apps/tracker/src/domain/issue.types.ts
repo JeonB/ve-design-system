@@ -170,6 +170,11 @@ export type MailNotice = {
   read: boolean;
 };
 
+export type MailMute = {
+  personId: string;
+  kind: NotificationKind;
+};
+
 export type SavedFilter = {
   id: string;
   projectKey: string;
@@ -190,6 +195,7 @@ export type TrackerData = {
   memberships: Membership[];
   workflows: Workflow[];
   notices: MailNotice[];
+  mailMutes: MailMute[];
 };
 
 export type CreateIssueInput = {

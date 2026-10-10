@@ -1,13 +1,14 @@
 import {
   NOTIFICATION_KINDS,
   type Issue,
+  type MailMute,
   type MailNotice,
   type NotificationKind,
   type Person,
   type TrackerData
 } from "./issue.types";
 
-export type { MailNotice, NotificationKind };
+export type { MailMute, MailNotice, NotificationKind };
 
 export type Presence = {
   actorId: string;
@@ -19,6 +20,19 @@ const PRESENCE_TTL_MS = 10_000;
 
 export function isNotificationKind(value: string): value is NotificationKind {
   return (NOTIFICATION_KINDS as readonly string[]).includes(value);
+}
+
+export function isMailMuted(data: TrackerData, personId: string, kind: NotificationKind): boolean {
+  return data.mailMutes.some((item) => item.personId === personId && item.kind === kind);
+}
+
+export function setMailMute(data: TrackerData, personId: string, kind: NotificationKind, muted: boolean): TrackerData {
+  const mailMutes = data.mailMutes.filter((item) => item.personId !== personId || item.kind !== kind);
+  return muted ? { ...data, mailMutes: [...mailMutes, { personId, kind }] } : { ...data, mailMutes };
+}
+
+function keepNotice(data: TrackerData, item: MailNotice): boolean {
+  return !isMailMuted(data, item.recipientId, item.kind);
 }
 
 function personName(people: Person[], personId: string): string {
@@ -66,12 +80,12 @@ export function noticesForUpdate(data: TrackerData, before: Issue, after: Issue,
       })
     );
   }
-  return created;
+  return created.filter((item) => keepNotice(data, item));
 }
 
 export function noticesForComment(data: TrackerData, issue: Issue, body: string, actorId: string, now: string): MailNotice[] {
   const mentioned = new Set(mentionedIds(body, data.people));
-  const recipients = new Set<string>([issue.assigneeId, issue.reporterId, ...mentioned]);
+  const recipients = new Set<string>([issue.assigneeId, issue.reporterId, ...issue.watchers, ...mentioned]);
   recipients.delete(actorId);
   const created: MailNotice[] = [];
   for (const recipientId of recipients) {
@@ -88,7 +102,7 @@ export function noticesForComment(data: TrackerData, issue: Issue, body: string,
       })
     );
   }
-  return created;
+  return created.filter((item) => keepNotice(data, item));
 }
 
 export function appendNotices(data: TrackerData, notices: MailNotice[]): TrackerData {
