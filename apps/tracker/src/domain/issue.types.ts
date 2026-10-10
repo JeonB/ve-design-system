@@ -1,10 +1,10 @@
-export const ISSUE_TYPES = ["epic", "story", "task", "bug", "subtask"] as const;
+export const ISSUE_TYPES = ["epic", "story", "task", "bug", "feature", "subtask"] as const;
 export type IssueType = (typeof ISSUE_TYPES)[number];
 
 export const ISSUE_STATUSES = ["todo", "in_progress", "in_review", "done"] as const;
 export type IssueStatus = (typeof ISSUE_STATUSES)[number];
 
-export const PRIORITIES = ["low", "medium", "high", "urgent"] as const;
+export const PRIORITIES = ["highest", "high", "medium", "low", "lowest"] as const;
 export type Priority = (typeof PRIORITIES)[number];
 
 export type Person = {

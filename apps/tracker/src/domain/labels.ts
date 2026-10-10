@@ -10,6 +10,8 @@ export function typeLabel(type: IssueType): string {
       return "Task";
     case "bug":
       return "Bug";
+    case "feature":
+      return "Feature";
     case "subtask":
       return "Subtask";
     default: {
@@ -22,11 +24,11 @@ export function typeLabel(type: IssueType): string {
 export function statusLabel(status: IssueStatus): string {
   switch (status) {
     case "todo":
-      return "To do";
+      return "To Do";
     case "in_progress":
-      return "In progress";
+      return "In Progress";
     case "in_review":
-      return "In review";
+      return "In Review";
     case "done":
       return "Done";
     default: {
@@ -38,14 +40,16 @@ export function statusLabel(status: IssueStatus): string {
 
 export function priorityLabel(priority: Priority): string {
   switch (priority) {
-    case "low":
-      return "Low";
-    case "medium":
-      return "Medium";
+    case "highest":
+      return "Highest";
     case "high":
       return "High";
-    case "urgent":
-      return "Urgent";
+    case "medium":
+      return "Medium";
+    case "low":
+      return "Low";
+    case "lowest":
+      return "Lowest";
     default: {
       const exhaustive: never = priority;
       return exhaustive;

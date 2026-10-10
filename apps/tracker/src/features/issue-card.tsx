@@ -9,6 +9,7 @@ const TYPE_MARK: Record<IssueType, string> = {
   story: "S",
   task: "T",
   bug: "B",
+  feature: "F",
   subtask: "s"
 };
 

@@ -9,6 +9,8 @@ export function typeBadgeVariant(type: IssueType): BadgeVariant {
       return "primary";
     case "epic":
       return "outline";
+    case "feature":
+      return "primary";
     case "task":
     case "subtask":
       return "neutral";
@@ -37,13 +39,14 @@ export function statusBadgeVariant(status: string, category?: StatusCategory): B
 
 export function priorityBadgeVariant(priority: Priority): BadgeVariant {
   switch (priority) {
-    case "urgent":
+    case "highest":
       return "danger";
     case "high":
       return "warning";
     case "medium":
       return "neutral";
     case "low":
+    case "lowest":
       return "outline";
     default: {
       const exhaustive: never = priority;

@@ -26,7 +26,7 @@ import { seedTracker } from "./seed";
 import { defaultWorkflow, isStatusCategory, isTransitionGuard } from "./workflow";
 
 export const TRACKER_STORAGE_KEY = "ve-tracker-data";
-export const TRACKER_SCHEMA_VERSION = 2;
+export const TRACKER_SCHEMA_VERSION = 3;
 
 type KeyValueStorage = Pick<Storage, "getItem" | "setItem">;
 
@@ -36,6 +36,33 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isString(value: unknown): value is string {
   return typeof value === "string";
+}
+
+function statusDisplayName(name: string): string {
+  switch (name) {
+    case "To do":
+      return "To Do";
+    case "In progress":
+      return "In Progress";
+    case "In review":
+      return "In Review";
+    default:
+      return name;
+  }
+}
+
+function isReadableVersion(value: unknown): boolean {
+  return value === 1 || value === 2 || value === TRACKER_SCHEMA_VERSION;
+}
+
+function readPriority(value: unknown): Issue["priority"] | null {
+  if (!isString(value)) {
+    return null;
+  }
+  if (value === "urgent") {
+    return "highest";
+  }
+  return isPriority(value) ? value : null;
 }
 
 function readAttachment(value: unknown): Attachment | null {
@@ -136,7 +163,6 @@ function readIssue(value: unknown): ReadIssue | null {
     !isIssueType(value.type) ||
     !isString(value.status) ||
     !isString(value.priority) ||
-    !isPriority(value.priority) ||
     !isString(value.summary) ||
     !isString(value.description) ||
     !isString(value.assigneeId) ||
@@ -186,7 +212,8 @@ function readIssue(value: unknown): ReadIssue | null {
   }
   const labels = readLabels(value.labels);
   const storyPoints = readPoints(value.storyPoints);
-  if (labels === null) {
+  const priority = readPriority(value.priority);
+  if (labels === null || priority === null) {
     return null;
   }
   if (Number.isNaN(storyPoints)) {
@@ -211,7 +238,7 @@ function readIssue(value: unknown): ReadIssue | null {
       projectKey: value.projectKey,
       type: value.type,
       status: value.status === "backlog" ? "todo" : value.status,
-      priority: value.priority,
+      priority,
       summary: value.summary,
       description: value.description,
       assigneeId: value.assigneeId,
@@ -349,7 +376,7 @@ function readWorkflow(value: unknown): Workflow | null {
     if (!isRecord(item) || !isString(item.id) || !isString(item.name) || !isString(item.category) || !isStatusCategory(item.category)) {
       return null;
     }
-    statuses.push({ id: item.id, name: item.name, category: item.category });
+    statuses.push({ id: item.id, name: statusDisplayName(item.name), category: item.category });
   }
   const transitions: Workflow["transitions"] = [];
   for (const item of value.transitions) {
@@ -418,7 +445,7 @@ export function parseTracker(raw: string): TrackerData | null {
   } catch {
     return null;
   }
-  if (!isRecord(parsed) || (parsed.version !== 1 && parsed.version !== TRACKER_SCHEMA_VERSION) || !isRecord(parsed.data)) {
+  if (!isRecord(parsed) || !isReadableVersion(parsed.version) || !isRecord(parsed.data)) {
     return null;
   }
   const data = parsed.data;

@@ -12,7 +12,7 @@ function keys(source: string, actorId = "ada", now = "2026-10-11T03:00:00.000Z")
 
 describe("jql", () => {
   it("상태와 currentUser로 내 진행 중 이슈를 찾는다", () => {
-    expect(keys('status = "In progress" AND assignee = currentUser()')).toEqual(["WEB-1"]);
+    expect(keys('status = "In Progress" AND assignee = currentUser()')).toEqual(["WEB-1"]);
   });
 
   it("라벨, 댓글 본문, 포인트, 빈 스프린트를 구분한다", () => {

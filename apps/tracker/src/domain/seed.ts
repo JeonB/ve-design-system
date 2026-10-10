@@ -61,7 +61,7 @@ function draftTracker(): { projects: TrackerData["projects"]; people: TrackerDat
         projectKey: "WEB",
         type: "bug",
         status: "todo",
-        priority: "urgent",
+        priority: "highest",
         summary: "Login button ignores the disabled state",
         description: "The submit button stays clickable while the form is invalid.",
         assigneeId: "min",

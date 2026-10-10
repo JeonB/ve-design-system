@@ -25,9 +25,9 @@ export function defaultWorkflow(projectKey: string): Workflow {
   return {
     projectKey,
     statuses: [
-      { id: "todo", name: "To do", category: "todo" },
-      { id: "in_progress", name: "In progress", category: "in_progress" },
-      { id: "in_review", name: "In review", category: "in_progress" },
+      { id: "todo", name: "To Do", category: "todo" },
+      { id: "in_progress", name: "In Progress", category: "in_progress" },
+      { id: "in_review", name: "In Review", category: "in_progress" },
       { id: "done", name: "Done", category: "done" }
     ],
     transitions: [

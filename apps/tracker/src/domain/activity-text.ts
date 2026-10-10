@@ -16,6 +16,9 @@ function fieldValue(field: ActivityEntry["field"], value: string, people: Person
     case "type":
       return isIssueType(value) ? typeLabel(value) : value;
     case "priority":
+      if (value === "urgent") {
+        return priorityLabel("highest");
+      }
       return isPriority(value) ? priorityLabel(value) : value;
     case "assignee":
       return personName(people, value);
