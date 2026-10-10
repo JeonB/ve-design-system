@@ -22,7 +22,7 @@ import {
 import { isNotificationKind } from "./mail";
 import { defaultMemberships } from "./permissions";
 import { seedTracker } from "./seed";
-import { defaultWorkflow, isStatusCategory } from "./workflow";
+import { defaultWorkflow, isStatusCategory, isTransitionGuard } from "./workflow";
 
 export const TRACKER_STORAGE_KEY = "ve-tracker-data";
 export const TRACKER_SCHEMA_VERSION = 2;
@@ -355,7 +355,11 @@ function readWorkflow(value: unknown): Workflow | null {
     if (!isRecord(item) || !isString(item.id) || !isString(item.from) || !isString(item.to) || !isString(item.name)) {
       return null;
     }
-    transitions.push({ id: item.id, from: item.from, to: item.to, name: item.name });
+    const guard = item.guard === undefined ? "any" : item.guard;
+    if (!isString(guard) || !isTransitionGuard(guard)) {
+      return null;
+    }
+    transitions.push({ id: item.id, from: item.from, to: item.to, name: item.name, guard });
   }
   if (statuses.length === 0) {
     return null;

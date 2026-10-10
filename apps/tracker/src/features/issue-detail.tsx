@@ -8,7 +8,7 @@ import { ISSUE_TYPES, LINK_TYPES, PRIORITIES, isIssueType, isLinkType, isPriorit
 import { priorityLabel, typeLabel } from "../domain/labels";
 import { can } from "../domain/permissions";
 import { useTracker } from "../domain/tracker-context";
-import { transitionTargets, workflowFor } from "../domain/workflow";
+import { actorMayTransition, transitionTargets, workflowFor } from "../domain/workflow";
 import {
   activityTabs,
   attachmentPreview,
@@ -88,7 +88,7 @@ export function IssueDetail({ issueId }: IssueDetailProps) {
   const currentStatus = workflow.statuses.find((status) => status.id === currentIssue.status);
   const statusOptions = [
     currentStatus ?? { id: currentIssue.status, name: currentIssue.status },
-    ...transitionTargets(workflow, currentIssue.status)
+    ...transitionTargets(workflow, currentIssue.status).filter((status) => actorMayTransition(data, currentIssue, status.id, data.actorId))
   ].filter((status, index, list) => list.findIndex((item) => item.id === status.id) === index);
   const mayEdit = can(data, data.actorId, currentIssue.projectKey, "edit");
   const mayTransition = can(data, data.actorId, currentIssue.projectKey, "transition");

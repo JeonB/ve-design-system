@@ -126,11 +126,15 @@ export type WorkflowStatus = {
   category: StatusCategory;
 };
 
+export const TRANSITION_GUARDS = ["any", "assignee", "admin"] as const;
+export type TransitionGuard = (typeof TRANSITION_GUARDS)[number];
+
 export type WorkflowTransition = {
   id: string;
   from: string;
   to: string;
   name: string;
+  guard: TransitionGuard;
 };
 
 export type Workflow = {

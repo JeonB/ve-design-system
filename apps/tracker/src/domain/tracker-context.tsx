@@ -9,7 +9,7 @@ import { assignSprint, completeSprint, createSprint, startSprint } from "./sprin
 import type { CreateIssueInput, Issue, IssuePatch, LinkType, ProjectAction, ProjectRole, TrackerData } from "./issue.types";
 import { CURRENT_ACTOR_ID } from "./seed";
 import { TRACKER_STORAGE_KEY, loadTracker, saveTracker } from "./storage";
-import { addWorkflowStatus, addWorkflowTransition, canTransition, removeWorkflowStatus, removeWorkflowTransition, statusName, workflowFor, type StatusCategory } from "./workflow";
+import { actorMayTransition, addWorkflowStatus, addWorkflowTransition, removeWorkflowStatus, removeWorkflowTransition, statusName, type StatusCategory, type TransitionGuard } from "./workflow";
 
 type TrackerContextValue = TrackerData & {
   actorId: string;
@@ -18,7 +18,7 @@ type TrackerContextValue = TrackerData & {
   setMembership: (projectKey: string, personId: string, role: ProjectRole) => boolean;
   addWorkflowStatus: (projectKey: string, input: { id: string; name: string; category: StatusCategory }) => boolean;
   removeWorkflowStatus: (projectKey: string, statusId: string) => boolean;
-  addWorkflowTransition: (projectKey: string, input: { from: string; to: string; name: string }) => boolean;
+  addWorkflowTransition: (projectKey: string, input: { from: string; to: string; name: string; guard?: TransitionGuard }) => boolean;
   removeWorkflowTransition: (projectKey: string, transitionId: string) => void;
   updateIssue: (issueId: string, patch: IssuePatch) => void;
   bulkUpdate: (issueIds: string[], patch: BulkIssuePatch) => boolean;
@@ -147,7 +147,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
         refuse();
         return;
       }
-      if (statusChanged && patch.status && !canTransition(workflowFor(dataRef.current, current.projectKey), current.status, patch.status)) {
+      if (statusChanged && patch.status && !actorMayTransition(dataRef.current, current, patch.status, actorRef.current)) {
         toast({ title: "That transition is not allowed.", variant: "danger" });
         return;
       }
@@ -221,7 +221,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
         refuse();
         return;
       }
-      if (statusChanged && !canTransition(workflowFor(dataRef.current, current.projectKey), current.status, status)) {
+      if (statusChanged && !actorMayTransition(dataRef.current, current, status, actorRef.current)) {
         toast({ title: "That transition is not allowed.", variant: "danger" });
         return;
       }
@@ -554,7 +554,7 @@ export function TrackerProvider({ children }: { children: ReactNode }) {
   );
 
   const createTransition = useCallback(
-    (projectKey: string, input: { from: string; to: string; name: string }) => {
+    (projectKey: string, input: { from: string; to: string; name: string; guard?: TransitionGuard }) => {
       if (!allowed(projectKey, "manage")) {
         refuse();
         return false;

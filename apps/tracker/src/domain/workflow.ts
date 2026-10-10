@@ -1,17 +1,24 @@
 import {
   STATUS_CATEGORIES,
+  TRANSITION_GUARDS,
   type Issue,
   type StatusCategory,
   type TrackerData,
+  type TransitionGuard,
   type Workflow,
   type WorkflowStatus,
   type WorkflowTransition
 } from "./issue.types";
+import { membershipFor } from "./permissions";
 
-export type { StatusCategory, Workflow, WorkflowStatus, WorkflowTransition };
+export type { StatusCategory, TransitionGuard, Workflow, WorkflowStatus, WorkflowTransition };
 
 export function isStatusCategory(value: string): value is StatusCategory {
   return (STATUS_CATEGORIES as readonly string[]).includes(value);
+}
+
+export function isTransitionGuard(value: string): value is TransitionGuard {
+  return (TRANSITION_GUARDS as readonly string[]).includes(value);
 }
 
 export function defaultWorkflow(projectKey: string): Workflow {
@@ -24,12 +31,12 @@ export function defaultWorkflow(projectKey: string): Workflow {
       { id: "done", name: "Done", category: "done" }
     ],
     transitions: [
-      { id: `${projectKey}-t-start`, from: "todo", to: "in_progress", name: "Start" },
-      { id: `${projectKey}-t-review`, from: "in_progress", to: "in_review", name: "Review" },
-      { id: `${projectKey}-t-stop`, from: "in_progress", to: "todo", name: "Stop" },
-      { id: `${projectKey}-t-done`, from: "in_review", to: "done", name: "Done" },
-      { id: `${projectKey}-t-back`, from: "in_review", to: "in_progress", name: "Back" },
-      { id: `${projectKey}-t-reopen`, from: "done", to: "in_review", name: "Reopen" }
+      { id: `${projectKey}-t-start`, from: "todo", to: "in_progress", name: "Start", guard: "any" },
+      { id: `${projectKey}-t-review`, from: "in_progress", to: "in_review", name: "Review", guard: "any" },
+      { id: `${projectKey}-t-stop`, from: "in_progress", to: "todo", name: "Stop", guard: "any" },
+      { id: `${projectKey}-t-done`, from: "in_review", to: "done", name: "Done", guard: "any" },
+      { id: `${projectKey}-t-back`, from: "in_review", to: "in_progress", name: "Back", guard: "any" },
+      { id: `${projectKey}-t-reopen`, from: "done", to: "in_review", name: "Reopen", guard: "any" }
     ]
   };
 }
@@ -49,6 +56,25 @@ export function isDoneStatus(data: TrackerData, issue: Issue): boolean {
 
 export function canTransition(workflow: Workflow, from: string, to: string): boolean {
   return workflow.transitions.some((transition) => transition.from === from && transition.to === to);
+}
+
+export function actorMayTransition(data: TrackerData, issue: Issue, to: string, actorId: string): boolean {
+  const transition = workflowFor(data, issue.projectKey).transitions.find((item) => item.from === issue.status && item.to === to);
+  if (!transition) {
+    return false;
+  }
+  switch (transition.guard) {
+    case "any":
+      return true;
+    case "assignee":
+      return issue.assigneeId === actorId;
+    case "admin":
+      return membershipFor(data, issue.projectKey, actorId)?.role === "admin";
+    default: {
+      const exhaustive: never = transition.guard;
+      return exhaustive;
+    }
+  }
 }
 
 export function transitionTargets(workflow: Workflow, from: string): WorkflowStatus[] {
@@ -98,7 +124,7 @@ export function removeWorkflowStatus(data: TrackerData, projectKey: string, stat
 export function addWorkflowTransition(
   data: TrackerData,
   projectKey: string,
-  input: { from: string; to: string; name: string }
+  input: { from: string; to: string; name: string; guard?: TransitionGuard }
 ): { data: TrackerData } | { error: string } {
   const name = input.name.trim();
   if (name.length === 0) {
@@ -118,7 +144,8 @@ export function addWorkflowTransition(
     id: `${projectKey}-t-${input.from}-${input.to}`,
     from: input.from,
     to: input.to,
-    name
+    name,
+    guard: input.guard ?? "any"
   };
   return { data: replaceWorkflow(data, { ...workflow, transitions: [...workflow.transitions, transition] }) };
 }

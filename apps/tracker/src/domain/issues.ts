@@ -10,7 +10,7 @@ import type {
   Project,
   TrackerData
 } from "./issue.types";
-import { canTransition, workflowFor } from "./workflow";
+import { actorMayTransition } from "./workflow";
 
 export function projectByKey(data: TrackerData, projectKey: string): Project | undefined {
   return data.projects.find((project) => project.key === projectKey);
@@ -224,11 +224,8 @@ export function bulkUpdateIssues(
     if (patch.assigneeId !== undefined && patch.assigneeId !== issue.assigneeId) {
       change.assigneeId = patch.assigneeId;
     }
-    if (patch.status !== undefined && patch.status !== issue.status) {
-      const workflow = workflowFor(next, issue.projectKey);
-      if (canTransition(workflow, issue.status, patch.status)) {
-        change.status = patch.status;
-      }
+    if (patch.status !== undefined && patch.status !== issue.status && actorMayTransition(next, issue, patch.status, actorId)) {
+      change.status = patch.status;
     }
     if (change.assigneeId === undefined && change.status === undefined) {
       skippedIds.push(issueId);
