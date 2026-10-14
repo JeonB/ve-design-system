@@ -583,6 +583,38 @@ export const summaryCard = style({
   gap: vars.space.x2
 });
 
+export const summaryStack = style({
+  display: "flex",
+  flexDirection: "column",
+  gap: vars.space.x4
+});
+
+export const summarySplit = style({
+  display: "grid",
+  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+  gap: vars.space.x3
+});
+
+export const summaryList = style({
+  display: "flex",
+  flexDirection: "column",
+  gap: vars.space.x2,
+  margin: 0,
+  padding: 0,
+  listStyle: "none"
+});
+
+export const summaryRow = style({
+  display: "flex",
+  justifyContent: "space-between",
+  gap: vars.space.x3
+});
+
+export const summaryLink = style({
+  color: vars.color.primary,
+  fontWeight: vars.font.weight.semibold
+});
+
 export const projectGrid = style({
   display: "grid",
   gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))",
