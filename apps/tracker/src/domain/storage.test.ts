@@ -52,4 +52,49 @@ describe("tracker storage", () => {
     );
     expect(result.issue.activity[0]?.field).toBe("created");
   });
+
+  it("스키마 2의 urgent는 highest로 읽는다", () => {
+    const saved = serializeTracker(seedTracker());
+    const parsed: unknown = JSON.parse(saved);
+    if (typeof parsed !== "object" || parsed === null || !("data" in parsed)) {
+      throw new Error("seed payload");
+    }
+    const payload = parsed as { version: number; data: { issues: { key: string; priority: string }[] } };
+    payload.version = 2;
+    const issue = payload.data.issues.find((item) => item.key === "WEB-2");
+    if (!issue) {
+      throw new Error("WEB-2");
+    }
+    issue.priority = "urgent";
+    const restored = parseTracker(JSON.stringify(payload));
+    expect(restored?.issues.find((item) => item.key === "WEB-2")?.priority).toBe("highest");
+  });
+
+  it("기본 상태 이름을 보드 표기와 맞춘다", () => {
+    const saved = serializeTracker(seedTracker());
+    const parsed: unknown = JSON.parse(saved);
+    if (typeof parsed !== "object" || parsed === null || !("data" in parsed)) {
+      throw new Error("seed payload");
+    }
+    const payload = parsed as {
+      data: { workflows: { statuses: { id: string; name: string }[] }[] };
+    };
+    const statuses = payload.data.workflows[0]?.statuses;
+    const todo = statuses?.find((status) => status.id === "todo");
+    const progress = statuses?.find((status) => status.id === "in_progress");
+    const review = statuses?.find((status) => status.id === "in_review");
+    if (!todo || !progress || !review) {
+      throw new Error("statuses");
+    }
+    todo.name = "To do";
+    progress.name = "In progress";
+    review.name = "In review";
+    const restored = parseTracker(JSON.stringify(payload));
+    expect(restored?.workflows[0]?.statuses.map((status) => status.name)).toEqual([
+      "To Do",
+      "In Progress",
+      "In Review",
+      "Done"
+    ]);
+  });
 });
