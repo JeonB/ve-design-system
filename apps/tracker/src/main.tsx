@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import { BrowserRouter } from "react-router";
 import { ThemeProvider, ThemeScript, ToastProvider } from "@ve/ui";
 import "@ve/tokens";
+import "@fontsource-variable/inter";
 import { TrackerProvider } from "./domain/tracker-context";
 import { TrackerRoutes } from "./tracker-routes";
 
