@@ -1,4 +1,4 @@
-import { Avatar, Button, Input, Select, ThemeToggle } from "@ve/ui";
+import { useTheme } from "@ve/ui";
 import { useState } from "react";
 import { Link, Outlet, useMatch, useNavigate, useSearchParams } from "react-router";
 import { personById, projectByKey } from "../domain/issues";
@@ -6,26 +6,41 @@ import { activeSprint } from "../domain/sprints";
 import { useTracker } from "../domain/tracker-context";
 import { workflowFor } from "../domain/workflow";
 import { CreateIssueDialog } from "../features/create-issue-dialog";
+import { Icon } from "./icons";
+import { PersonMark, SpaceMark } from "./marks";
 import {
-  frame,
-  main,
-  page,
-  searchForm,
-  sideItem,
-  sideItemActive,
-  sideLabel,
-  sidebar,
-  spaceMark,
-  topActions,
-  topbar,
-  wordmark
-} from "./shell.css";
+  actorSelect,
+  appHome,
+  appMark,
+  badgeCount,
+  createButton,
+  iconButton,
+  searchBox,
+  searchIcon,
+  searchInput,
+  sideGroup,
+  sideList,
+  sideNav,
+  sideRow,
+  sideRowActive,
+  sideRowEnd,
+  sideRowNested,
+  topCenter,
+  topEnd,
+  topNav,
+  topStart
+} from "./nav.css";
+import { frame, main, page } from "./shell.css";
 
 export function AppShell() {
   const data = useTracker();
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState(params.get("q") ?? "");
+  const [sideOpen, setSideOpen] = useState(true);
+  const { resolvedTheme, toggle: toggleTheme } = useTheme();
+  const forYouMatch = useMatch({ path: "/", end: true });
+  const inboxMatch = useMatch("/inbox");
   const projectMatch = useMatch({ path: "/p/:projectKey", end: false });
   const projectKey = projectMatch?.params.projectKey;
   const project = projectKey ? projectByKey(data, projectKey) : undefined;
@@ -52,40 +67,73 @@ export function AppShell() {
 
   return (
     <div className={page}>
-      <header className={topbar}>
-        <Link className={wordmark} to={project ? `/p/${project.key}` : "/"}>
-          Tracker
-        </Link>
-        <form
-          className={searchForm}
-          onSubmit={(event) => {
-            event.preventDefault();
-            const key = project?.key ?? data.projects[0]?.key;
-            if (!key) {
-              return;
-            }
-            navigate(`/p/${key}/list?q=${encodeURIComponent(search.trim())}`);
-          }}
-        >
-          <Input
-            aria-label="Search"
-            fullWidth
-            name="search"
-            placeholder="Search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-          />
-        </form>
-        <div className={topActions}>
-          <Button disabled={!project} type="button" onClick={openCreate}>
+      <header className={topNav}>
+        <div className={topStart}>
+          <button
+            aria-controls="tracker-sidebar"
+            aria-expanded={sideOpen}
+            aria-label={sideOpen ? "Collapse sidebar" : "Expand sidebar"}
+            className={iconButton}
+            type="button"
+            onClick={() => setSideOpen((open) => !open)}
+          >
+            <Icon name="sidebar" />
+          </button>
+          <Link aria-label="All spaces" className={iconButton} to="/">
+            <Icon name="apps" />
+          </Link>
+          <Link className={appHome} to={project ? `/p/${project.key}/summary` : "/"}>
+            <span aria-hidden className={appMark}>
+              T
+            </span>
+            Tracker
+          </Link>
+        </div>
+        <div className={topCenter}>
+          <form
+            className={searchBox}
+            role="search"
+            onSubmit={(event) => {
+              event.preventDefault();
+              const key = project?.key ?? data.projects[0]?.key;
+              if (!key) {
+                return;
+              }
+              navigate(`/p/${key}/list?q=${encodeURIComponent(search.trim())}`);
+            }}
+          >
+            <Icon className={searchIcon} name="search" />
+            <input
+              aria-label="Search"
+              className={searchInput}
+              name="search"
+              placeholder="Search"
+              type="search"
+              value={search}
+              onChange={(event) => setSearch(event.target.value)}
+            />
+          </form>
+          <button className={createButton} disabled={!project} type="button" onClick={openCreate}>
+            <Icon name="plus" />
             Create
-          </Button>
-          <Button asChild variant="ghost">
-            <Link to="/inbox">{unread > 0 ? `Inbox (${unread})` : "Inbox"}</Link>
-          </Button>
-          {actor ? <Avatar alt={actor.name} size="sm" /> : null}
-          <Select
+          </button>
+        </div>
+        <div className={topEnd}>
+          <Link aria-label={unread > 0 ? `Inbox, ${unread} unread` : "Inbox"} className={iconButton} to="/inbox">
+            <Icon name="bell" />
+            {unread > 0 ? <span className={badgeCount}>{unread > 9 ? "9+" : unread}</span> : null}
+          </Link>
+          <button
+            aria-label={resolvedTheme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+            className={iconButton}
+            type="button"
+            onClick={toggleTheme}
+          >
+            <Icon name={resolvedTheme === "dark" ? "sun" : "moon"} />
+          </button>
+          <select
             aria-label="Acting as"
+            className={actorSelect}
             name="actor"
             value={data.people.some((person) => person.id === data.actorId) ? data.actorId : (data.people[0]?.id ?? "")}
             onChange={(event) => data.setActor(event.target.value)}
@@ -95,34 +143,56 @@ export function AppShell() {
                 {person.name}
               </option>
             ))}
-          </Select>
-          <ThemeToggle />
+          </select>
+          <PersonMark person={actor} />
         </div>
       </header>
       <div className={frame}>
-        <aside className={sidebar}>
-          <p className={sideLabel}>Spaces</p>
-          {data.projects.map((item) => {
-            const active = item.key === project?.key;
-            return (
-              <Link
-                key={item.key}
-                className={active ? `${sideItem} ${sideItemActive}` : sideItem}
-                to={`/p/${item.key}`}
-              >
-                <span className={spaceMark}>{item.key.slice(0, 1)}</span>
-                {item.name}
-              </Link>
-            );
-          })}
-          <p className={sideLabel}>You</p>
-          <Link className={sideItem} to="/inbox">
-            Inbox
-          </Link>
-          <Link className={sideItem} to="/">
-            All spaces
-          </Link>
-        </aside>
+        {sideOpen ? (
+          <nav aria-label="Sidebar" className={sideNav} id="tracker-sidebar">
+            <ul className={sideList}>
+              <li>
+                <Link className={forYouMatch ? `${sideRow} ${sideRowActive}` : sideRow} to="/">
+                  <Icon name="forYou" />
+                  For you
+                </Link>
+              </li>
+              <li>
+                <Link className={inboxMatch ? `${sideRow} ${sideRowActive}` : sideRow} to="/inbox">
+                  <Icon name="inbox" />
+                  Inbox
+                  {unread > 0 ? <span className={sideRowEnd}>{unread}</span> : null}
+                </Link>
+              </li>
+              <li>
+                <Link className={sideRow} to="/">
+                  <Icon name="spaces" />
+                  Spaces
+                </Link>
+              </li>
+              <li>
+                <p className={sideGroup}>Recent</p>
+                <ul className={sideList}>
+                  {data.projects.map((item) => {
+                    const active = item.key === project?.key;
+                    return (
+                      <li key={item.key}>
+                        <Link
+                          aria-current={active ? "page" : undefined}
+                          className={active ? `${sideRow} ${sideRowNested} ${sideRowActive}` : `${sideRow} ${sideRowNested}`}
+                          to={`/p/${item.key}/summary`}
+                        >
+                          <SpaceMark spaceKey={item.key} />
+                          {item.name}
+                        </Link>
+                      </li>
+                    );
+                  })}
+                </ul>
+              </li>
+            </ul>
+          </nav>
+        ) : null}
         <main className={main}>
           <Outlet />
         </main>
