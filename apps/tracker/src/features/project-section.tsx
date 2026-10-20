@@ -3,23 +3,20 @@ import { Link, Outlet, useMatch, useParams } from "react-router";
 import { projectByKey } from "../domain/issues";
 import { useTracker } from "../domain/tracker-context";
 import { ProjectBoard } from "./project-board";
-import {
-  space,
-  spaceBody,
-  spaceHeader,
-  spaceTitle,
-  viewLink,
-  viewLinkActive,
-  viewNav
-} from "../layout/shell.css";
+import { Icon, type IconName } from "../layout/icons";
+import { SpaceMark } from "../layout/marks";
+import { breadcrumb, spaceHeader, spaceTitle, spaceTitleRow, tab, tabActive, tabs } from "../layout/nav.css";
+import { space, spaceBody } from "../layout/shell.css";
 
-const VIEWS = [
-  { id: "summary", label: "Summary", suffix: "/summary" },
-  { id: "list", label: "List", suffix: "/list" },
-  { id: "board", label: "Board", suffix: "" },
-  { id: "backlog", label: "Backlog", suffix: "/backlog" },
-  { id: "settings", label: "Settings", suffix: "/settings" }
-] as const;
+type ViewId = "summary" | "list" | "board" | "backlog" | "settings";
+
+const VIEWS: readonly { id: ViewId; label: string; suffix: string; icon: IconName }[] = [
+  { id: "summary", label: "Summary", suffix: "/summary", icon: "summary" },
+  { id: "list", label: "List", suffix: "/list", icon: "list" },
+  { id: "board", label: "Board", suffix: "", icon: "board" },
+  { id: "backlog", label: "Backlog", suffix: "/backlog", icon: "backlog" },
+  { id: "settings", label: "Settings", suffix: "/settings", icon: "settings" }
+];
 
 export function ProjectSection() {
   const { projectKey = "" } = useParams();
@@ -39,27 +36,46 @@ export function ProjectSection() {
     );
   }
 
-  const tab = summaryMatch ? "summary" : listMatch ? "list" : backlogMatch ? "backlog" : settingsMatch ? "settings" : "board";
+  const current: ViewId = summaryMatch
+    ? "summary"
+    : listMatch
+      ? "list"
+      : backlogMatch
+        ? "backlog"
+        : settingsMatch
+          ? "settings"
+          : "board";
 
   return (
     <div className={space}>
       <header className={spaceHeader}>
-        <h1 className={spaceTitle}>{project.name}</h1>
+        <Link className={breadcrumb} to="/">
+          Spaces
+        </Link>
+        <div className={spaceTitleRow}>
+          <SpaceMark spaceKey={project.key} />
+          <h1 className={spaceTitle}>{project.name}</h1>
+        </div>
+        <nav aria-label="Space views">
+          <ul className={tabs}>
+            {VIEWS.map((view) => {
+              const active = view.id === current;
+              return (
+                <li key={view.id}>
+                  <Link
+                    aria-current={active ? "page" : undefined}
+                    className={active ? `${tab} ${tabActive}` : tab}
+                    to={`/p/${project.key}${view.suffix}`}
+                  >
+                    <Icon name={view.icon} />
+                    {view.label}
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </nav>
       </header>
-      <nav aria-label="Space views" className={viewNav}>
-        {VIEWS.map((view) => {
-          const active = view.id === tab;
-          return (
-            <Link
-              key={view.id}
-              className={active ? `${viewLink} ${viewLinkActive}` : viewLink}
-              to={`/p/${project.key}${view.suffix}`}
-            >
-              {view.label}
-            </Link>
-          );
-        })}
-      </nav>
       <div className={spaceBody}>
         {detailMatch ? <ProjectBoard projectKey={project.key} /> : null}
         <Outlet />
