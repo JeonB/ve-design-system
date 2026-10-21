@@ -38,6 +38,18 @@ describe("jql", () => {
     expect(keys("project = WEB ORDER BY due ASC")[0]).toBe("WEB-1");
   });
 
+  it("담당자가 없는 이슈는 assignee IS EMPTY로 찾는다", () => {
+    const data = seedTracker();
+    const unassigned = { ...data, issues: data.issues.map((issue) => (issue.key === "WEB-2" ? { ...issue, assigneeId: "" } : issue)) };
+    const result = evaluateJql(unassigned, "project = WEB AND assignee IS EMPTY", "ada");
+    expect("error" in result ? result.error : result.issues.map((issue) => issue.key)).toEqual(["WEB-2"]);
+  });
+
+  it("만든 날과 고친 날을 날짜로 거른다", () => {
+    expect(keys('project = WEB AND created >= "2026-09-21" ORDER BY key ASC')).toEqual(["WEB-2", "WEB-5"]);
+    expect(keys('project = WEB AND updated < "2026-09-20" ORDER BY key ASC')).toEqual(["WEB-3", "WEB-4"]);
+  });
+
   it("잘못된 문법은 이유로 돌려준다", () => {
     expect(evaluateJql(seedTracker(), "status == done", "ada")).toEqual({ error: "Expected a value." });
     expect(evaluateJql(seedTracker(), "", "ada")).toEqual({ error: "JQL is empty." });

@@ -53,12 +53,13 @@ export function IssueList({ projectKey }: IssueListProps) {
   const data = useTracker();
   const [params, setParams] = useSearchParams();
   const [query, setQuery] = useState(params.get("q") ?? "");
-  const [filtersOpen, setFiltersOpen] = useState(false);
+  const jqlFromUrl = params.get("jql") ?? "";
+  const [filtersOpen, setFiltersOpen] = useState(jqlFromUrl.length > 0);
   const [type, setType] = useState<IssueType | "all">("all");
   const [status, setStatus] = useState("all");
   const [assigneeId, setAssigneeId] = useState("all");
   const [filterName, setFilterName] = useState("");
-  const [jql, setJql] = useState("");
+  const [jql, setJql] = useState(jqlFromUrl);
   const [groupBy, setGroupBy] = useState<GroupBy>("none");
   const [selected, setSelected] = useState<string[]>([]);
   const workflow = workflowFor(data, projectKey);
@@ -68,6 +69,13 @@ export function IssueList({ projectKey }: IssueListProps) {
   useEffect(() => {
     setQuery(queryFromUrl);
   }, [queryFromUrl]);
+
+  useEffect(() => {
+    if (jqlFromUrl.length > 0) {
+      setJql(jqlFromUrl);
+      setFiltersOpen(true);
+    }
+  }, [jqlFromUrl]);
 
   const jqlText = jql.trim();
   const jqlResult = jqlText.length === 0 ? null : evaluateJql(data, jqlText, data.actorId);

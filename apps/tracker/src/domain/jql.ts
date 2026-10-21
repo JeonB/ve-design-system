@@ -46,7 +46,9 @@ const FIELDS = new Set([
   "due",
   "start",
   "watcher",
-  "resolution"
+  "resolution",
+  "created",
+  "updated"
 ]);
 
 const ORDER_FIELDS = new Set(["updated", "created", "key", "summary", "priority", "status", "storypoints", "rank", "due"]);
@@ -374,6 +376,9 @@ function same(left: string, right: string): boolean {
 
 function texts(issue: Issue, field: string, data: TrackerData): string[] {
   const names = (personId: string) => {
+    if (personId.length === 0) {
+      return [];
+    }
     const person = data.people.find((item) => item.id === personId);
     return person ? [person.id, person.name] : [personId];
   };
@@ -443,7 +448,7 @@ function isEmpty(issue: Issue, field: string, data: TrackerData): boolean {
   if (field === "start") {
     return issue.startDate === null;
   }
-  if (field === "resolution") {
+  if (field === "resolution" || field === "created" || field === "updated") {
     return false;
   }
   return texts(issue, field, data).length === 0;
@@ -517,6 +522,9 @@ function compare(issue: Issue, expr: Extract<Expr, { kind: "cmp" }>, data: Track
   }
   if (expr.field === "due" || expr.field === "start") {
     return compareDate(expr.field === "due" ? issue.dueDate : issue.startDate, expr.op, String(raw));
+  }
+  if (expr.field === "created" || expr.field === "updated") {
+    return compareDate(expr.field === "created" ? issue.createdAt : issue.updatedAt, expr.op, String(raw));
   }
   const text = String(raw);
   switch (expr.op) {
