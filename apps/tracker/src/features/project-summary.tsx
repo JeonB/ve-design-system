@@ -31,7 +31,7 @@ export function ProjectSummary({ projectKey }: ProjectSummaryProps) {
   const data = useTracker();
   const issues = issuesByProject(data, projectKey);
   const workflow = workflowFor(data, projectKey);
-  const summary = buildSpaceSummary(issues, workflow, new Date().toISOString());
+  const summary = buildSpaceSummary(projectKey, issues, workflow, new Date().toISOString());
   const listHref = `/p/${projectKey}/list`;
 
   return (
@@ -39,22 +39,22 @@ export function ProjectSummary({ projectKey }: ProjectSummaryProps) {
       <div className={summaryGrid}>
         <section className={summaryCard}>
           <h2>Completed</h2>
-          <strong>{summary.activity.completed}</strong>
+          <strong>{summary.activity.completed.count}</strong>
           <span>in the last 7 days</span>
         </section>
         <section className={summaryCard}>
           <h2>Updated</h2>
-          <strong>{summary.activity.updated}</strong>
+          <strong>{summary.activity.updated.count}</strong>
           <span>in the last 7 days</span>
         </section>
         <section className={summaryCard}>
           <h2>Created</h2>
-          <strong>{summary.activity.created}</strong>
+          <strong>{summary.activity.created.count}</strong>
           <span>in the last 7 days</span>
         </section>
         <section className={summaryCard}>
           <h2>Due soon</h2>
-          <strong>{summary.activity.dueSoon}</strong>
+          <strong>{summary.activity.dueSoon.count}</strong>
           <span>in the next 7 days</span>
         </section>
       </div>
@@ -107,8 +107,8 @@ export function ProjectSummary({ projectKey }: ProjectSummaryProps) {
         <h2>Team workload</h2>
         <ul className={summaryList}>
           {summary.workload.map((item) => (
-            <li key={item.assigneeId || "unassigned"} className={summaryRow}>
-              <span>{personName(data.people, item.assigneeId)}</span>
+            <li key={item.id || "unassigned"} className={summaryRow}>
+              <span>{personName(data.people, item.id)}</span>
               <strong>{item.count}</strong>
             </li>
           ))}
