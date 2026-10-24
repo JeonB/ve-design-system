@@ -1,5 +1,6 @@
 import { globalStyle, style } from "@vanilla-extract/css";
 import { vars } from "@ve/tokens";
+import { font, jira } from "./jira-theme.css";
 
 globalStyle("*, *::before, *::after", {
   boxSizing: "border-box"
@@ -18,43 +19,9 @@ export const page = style({
   display: "flex",
   flexDirection: "column",
   overflow: "hidden",
-  background: vars.color.background,
-  color: vars.color.foreground,
-  fontFamily: vars.font.body,
-  fontSize: vars.font.size.md
-});
-
-export const topbar = style({
-  minHeight: "56px",
-  flex: "none",
-  display: "flex",
-  alignItems: "center",
-  gap: vars.space.x3,
-  padding: `${vars.space.x2} ${vars.space.x4}`,
-  borderBottom: `1px solid ${vars.color.border}`,
-  background: vars.color.background,
-  flexWrap: "wrap"
-});
-
-export const wordmark = style({
-  fontWeight: vars.font.weight.semibold,
-  fontSize: vars.font.size.lg,
-  textDecoration: "none",
-  color: vars.color.primary,
-  marginRight: vars.space.x2
-});
-
-export const searchForm = style({
-  flex: 1,
-  maxWidth: "720px",
-  margin: "0 auto"
-});
-
-export const topActions = style({
-  display: "flex",
-  alignItems: "center",
-  gap: vars.space.x2,
-  marginLeft: "auto"
+  background: jira.color.surface,
+  color: jira.color.text,
+  font: font.body
 });
 
 export const frame = style({
@@ -66,72 +33,6 @@ export const frame = style({
       flexDirection: "column"
     }
   }
-});
-
-export const sidebar = style({
-  width: "240px",
-  flex: "none",
-  borderRight: `1px solid ${vars.color.border}`,
-  background: vars.color.background,
-  overflow: "auto",
-  padding: `${vars.space.x4} ${vars.space.x2}`,
-  display: "flex",
-  flexDirection: "column",
-  gap: vars.space.x1,
-  "@media": {
-    "screen and (max-width: 800px)": {
-      width: "100%",
-      flexDirection: "row",
-      alignItems: "center",
-      borderRight: "none",
-      borderBottom: `1px solid ${vars.color.border}`,
-      padding: vars.space.x2
-    }
-  }
-});
-
-export const sideLabel = style({
-  margin: 0,
-  padding: `0 ${vars.space.x2}`,
-  color: vars.color.mutedForeground,
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold
-});
-
-export const sideItem = style({
-  display: "flex",
-  alignItems: "center",
-  gap: vars.space.x2,
-  padding: `${vars.space.x2} ${vars.space.x2}`,
-  borderRadius: vars.radius.sm,
-  textDecoration: "none",
-  color: vars.color.foreground,
-  fontSize: vars.font.size.md,
-  selectors: {
-    "&:hover": {
-      background: vars.color.ghostHover
-    }
-  }
-});
-
-export const sideItemActive = style({
-  background: vars.color.primarySubtle,
-  color: vars.color.primary,
-  fontWeight: vars.font.weight.semibold
-});
-
-export const spaceMark = style({
-  width: "20px",
-  height: "20px",
-  borderRadius: vars.radius.sm,
-  background: vars.color.primary,
-  color: vars.color.primaryForeground,
-  display: "inline-flex",
-  alignItems: "center",
-  justifyContent: "center",
-  fontSize: vars.font.size.sm,
-  fontWeight: vars.font.weight.semibold,
-  flex: "none"
 });
 
 export const main = style({
@@ -153,45 +54,6 @@ export const space = style({
   minHeight: 0,
   display: "flex",
   flexDirection: "column"
-});
-
-export const spaceHeader = style({
-  display: "flex",
-  alignItems: "center",
-  gap: vars.space.x3,
-  padding: `${vars.space.x4} ${vars.space.x6} 0`
-});
-
-export const spaceTitle = style({
-  margin: 0,
-  fontSize: "20px",
-  fontWeight: vars.font.weight.semibold
-});
-
-export const viewNav = style({
-  display: "flex",
-  gap: vars.space.x1,
-  padding: `0 ${vars.space.x4}`,
-  borderBottom: `1px solid ${vars.color.border}`
-});
-
-export const viewLink = style({
-  padding: `${vars.space.x3} ${vars.space.x3}`,
-  textDecoration: "none",
-  color: vars.color.mutedForeground,
-  fontSize: vars.font.size.md,
-  borderBottom: "2px solid transparent",
-  selectors: {
-    "&:hover": {
-      color: vars.color.foreground
-    }
-  }
-});
-
-export const viewLinkActive = style({
-  color: vars.color.primary,
-  fontWeight: vars.font.weight.semibold,
-  borderBottomColor: vars.color.primary
 });
 
 export const spaceBody = style({
@@ -566,53 +428,6 @@ export const chipRow = style({
   display: "flex",
   flexWrap: "wrap",
   gap: vars.space.x2
-});
-
-export const summaryGrid = style({
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fill, minmax(160px, 1fr))",
-  gap: vars.space.x3
-});
-
-export const summaryCard = style({
-  border: `1px solid ${vars.color.border}`,
-  borderRadius: vars.radius.md,
-  padding: vars.space.x4,
-  display: "flex",
-  flexDirection: "column",
-  gap: vars.space.x2
-});
-
-export const summaryStack = style({
-  display: "flex",
-  flexDirection: "column",
-  gap: vars.space.x4
-});
-
-export const summarySplit = style({
-  display: "grid",
-  gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-  gap: vars.space.x3
-});
-
-export const summaryList = style({
-  display: "flex",
-  flexDirection: "column",
-  gap: vars.space.x2,
-  margin: 0,
-  padding: 0,
-  listStyle: "none"
-});
-
-export const summaryRow = style({
-  display: "flex",
-  justifyContent: "space-between",
-  gap: vars.space.x3
-});
-
-export const summaryLink = style({
-  color: vars.color.primary,
-  fontWeight: vars.font.weight.semibold
 });
 
 export const projectGrid = style({
